@@ -64,7 +64,26 @@
 <h5 id="1-1-序"><a href="#1-1-序" class="headerlink" title="1.1 序"></a>1.1 序</h5><pre><code>　　在搭建这个个人博客之前，我所有的笔记都是以word、txt或者其它形式的本地文档保存的。这样存在两个主要的问题：  
 　　①各种文档的格式排版并不统一，即使是同一个软件如word文档，不同版本（03、07、10）兼容性也有问题，打开后会出现混乱的格式。  
 　　②本地文件容易丢失，并且不能异地编辑。  
-　　因此参考一些网上教程后，完成了自己博客的搭建，这下又可以去装逼了。扯远了，跟我一起去折腾吧。
+　　在参考一些网上教程后，也完成了自己博客的搭建，开启了新的装逼之旅。闲话少许，下面直接上图。
+</code></pre><p><img src="/source/images/个人博客github主页.PNG" alt="image"></p>
+<h5 id="1-2-前期准备"><a href="#1-2-前期准备" class="headerlink" title="1.2 前期准备"></a>1.2 前期准备</h5><pre><code>　　软件：git、github、hexo、Node.js
+　　硬件：Win7_X64
+　　账号注册：需要申请一个github的账号
+　　注：我搭建时软件版本分别为git2.10.1.windows.1、github-3.3.2.0-570bd2e(Chocolate-Covered Yaks，桌面版)、hexo-1.0.2(hexo-cli)、Node.js-6.9.1，版本不同可能会略有些差异，请知晓。
+</code></pre><h5 id="1-3-Step1：生成github-pages"><a href="#1-3-Step1：生成github-pages" class="headerlink" title="1.3 Step1：生成github_pages"></a>1.3 Step1：生成github_pages</h5><pre><code>　　github账号申请好后，直接在![github](https://github.com)登录，然后去新建一个仓库(new repository)，如果是第一次登陆好像会弹窗提示你新建仓库，如果已经建过其它仓库，可以在登陆后主页面的右下角找到，如下图所示：
+　　![image](K:\学习资料\日有所积必成江海\Blogs\hexo\source\_posts\images\github_create_new_repository.PNG)
+　　注意这里新建的仓库的名字前缀一定要是你的github账号（即你的用户名），后缀为.github.io，我的用户名是flat2010，那么新建的时候我的repository的名字即为：flat2010.github.io。
+　　建好后，你的仓库的地址为：![github](https://你的用户名.github.io)，等下面我们生成githubpages后在浏览器中键入该地址就能访问了。创建好后，进入新建的仓库（项目），在上面的菜单中找到“settings”，如下图所示：
+　　![image](K:\\github_create_new_repository.PNG)
+　　点击进去后，一直往下拖，在页面中下部位置找到&quot;Launch automatic page generator&quot;，如下图所示：
+　　![image]()
+　　进去后同样往下拖，在页面右下角找到&quot;continue layouts&quot;，如下图所示：
+　　![image]()
+　　点进去后，会让你选择你的首页的模板，选一个你喜欢的style，然后点击&quot;publish page&quot;即可（点击模板页面下方自动生成预览图哦），如下图所示：
+　　![image]()
+　　这时候，在浏览器中键入你仓库的地址![github_page](https://你的用户名.github.io)看看效果吧，蛋定，这个还不是你的博客^--^。
+</code></pre><h5 id="1-4-Step2：安装Node-js和Git"><a href="#1-4-Step2：安装Node-js和Git" class="headerlink" title="1.4 Step2：安装Node.js和Git"></a>1.4 Step2：安装Node.js和Git</h5><pre><code>　　Node.js的安装没有什么需要特别注意的地方，安装也挺简单的，就不多说了，重点说说Git安装时需要配置的地方。
+　　
 </code></pre>
     </section>
     <footer class="post-footer">
