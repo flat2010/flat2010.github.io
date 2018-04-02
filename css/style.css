@@ -598,33 +598,39 @@ body {
 }
 .post .post-content h2 {
   font-size: 18px;
-  margin: 0 0 0.5em;
+  margin: 0.6em 0 0.6em;
   border-radius: 8px;
   background: #70b8ff;
-  width: 50%;
+  width: 60%;
 }
 .post .post-content h3 {
   font-size: 16px;
-  margin: 0 0 0.5em;
+  margin: 0.6em 0 0.6em;
   border-radius: 10px;
   background: #99f;
-  width: 60%;
+  width: 65%;
 }
 .post .post-content h4 {
   font-size: 14px;
-  margin: 0 0 0.5em;
+  margin: 0.8em 0 1em;
   border-radius: 12px;
   background: #00b8b8;
   width: 70%;
 }
 .post .post-content h5 {
   font-size: 13px;
+  margin: 0.6em 0 0.2em;
+  border-radius: 12px;
+  background: #fc3;
+  width: 75%;
 }
 .post .post-content h6 {
   font-size: 12px;
 }
 .post .post-content p {
-  margin: 0 0 1.234em;
+  margin: 0.2em 0 0em;
+  line-height: 2.2em;
+  padding: 0px 0px 0px 0px;
 }
 .post .post-content p code {
   margin: 0 5px;
