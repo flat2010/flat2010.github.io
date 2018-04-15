@@ -123,9 +123,9 @@
       <category term="Ubuntu" scheme="https://flat2010.github.io/categories/Linux/Ubuntu/"/>
     
     
-      <category term="Linux" scheme="https://flat2010.github.io/tags/Linux/"/>
-    
       <category term="Ubuntu" scheme="https://flat2010.github.io/tags/Ubuntu/"/>
+    
+      <category term="Linux" scheme="https://flat2010.github.io/tags/Linux/"/>
     
   </entry>
   
@@ -581,11 +581,11 @@
       <category term="Netfilter" scheme="https://flat2010.github.io/categories/Linux%E7%9B%B8%E5%85%B3/Netfilter/"/>
     
     
+      <category term="Linux" scheme="https://flat2010.github.io/tags/Linux/"/>
+    
       <category term="Netfilter" scheme="https://flat2010.github.io/tags/Netfilter/"/>
     
       <category term="Iptables" scheme="https://flat2010.github.io/tags/Iptables/"/>
-    
-      <category term="Linux" scheme="https://flat2010.github.io/tags/Linux/"/>
     
   </entry>
   

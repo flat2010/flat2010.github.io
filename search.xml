@@ -42,8 +42,8 @@
         <category>Ubuntu</category>
       </categories>
       <tags>
-        <tag>Linux</tag>
         <tag>Ubuntu</tag>
+        <tag>Linux</tag>
       </tags>
   </entry>
   <entry>
@@ -233,9 +233,9 @@
         <category>Netfilter</category>
       </categories>
       <tags>
+        <tag>Linux</tag>
         <tag>Netfilter</tag>
         <tag>Iptables</tag>
-        <tag>Linux</tag>
       </tags>
   </entry>
   <entry>
@@ -325,8 +325,8 @@
         <category>Oracle安装</category>
       </categories>
       <tags>
-        <tag>Ubuntu</tag>
         <tag>Oracle</tag>
+        <tag>Ubuntu</tag>
         <tag>数据库</tag>
       </tags>
   </entry>
