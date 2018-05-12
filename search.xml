@@ -137,8 +137,8 @@
         <category>利用Python进行数据分析</category>
       </categories>
       <tags>
-        <tag>Python</tag>
         <tag>Numpy</tag>
+        <tag>Python</tag>
       </tags>
   </entry>
   <entry>
@@ -364,8 +364,8 @@
         <category>Oracle安装</category>
       </categories>
       <tags>
-        <tag>Ubuntu</tag>
         <tag>Oracle</tag>
+        <tag>Ubuntu</tag>
         <tag>数据库</tag>
       </tags>
   </entry>
