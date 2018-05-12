@@ -81,8 +81,8 @@
         <category>Ubuntu</category>
       </categories>
       <tags>
-        <tag>Ubuntu</tag>
         <tag>Linux</tag>
+        <tag>Ubuntu</tag>
       </tags>
   </entry>
   <entry>
@@ -137,8 +137,8 @@
         <category>利用Python进行数据分析</category>
       </categories>
       <tags>
-        <tag>Numpy</tag>
         <tag>Python</tag>
+        <tag>Numpy</tag>
       </tags>
   </entry>
   <entry>
@@ -272,9 +272,9 @@
         <category>Netfilter</category>
       </categories>
       <tags>
-        <tag>Linux</tag>
         <tag>Netfilter</tag>
         <tag>Iptables</tag>
+        <tag>Linux</tag>
       </tags>
   </entry>
   <entry>
@@ -364,8 +364,8 @@
         <category>Oracle安装</category>
       </categories>
       <tags>
-        <tag>Oracle</tag>
         <tag>Ubuntu</tag>
+        <tag>Oracle</tag>
         <tag>数据库</tag>
       </tags>
   </entry>
