@@ -21,8 +21,8 @@ fieldset,
 form,
 input,
 select,
-option {
-  margin: 0;
+option,
+margin: 0 {
   padding: 0;
   border: 0;
 }
@@ -691,6 +691,61 @@ body {
   margin-top: 0.1em;
   position: relative;
   text-align: center;
+}
+.post .post-content singlerefblock {
+  margin: 5px 5px 0px 0px;
+  background-color: rgba(235,235,235,0.5);
+  padding: 3px 10px;
+  border-radius: 9px;
+  border-left: 5px solid #ff83fa;
+  border-right: 5px solid #ff83fa;
+  word-wrap: break-all;
+  display: block;
+  margin-block-start: 1em;
+  margin-block-end: 1em;
+  margin-inline-start: 15px;
+  margin-inline-end: 40px;
+}
+.post .post-content multirefblock {
+  margin: 5px 5px 0px 0px;
+  background-color: rgba(235,235,235,0.5);
+  padding: 3px 10px;
+  border-radius: 16px;
+  border-left: 7px solid #ff83fa;
+  border-right: 7px solid #ff83fa;
+  word-wrap: break-all;
+  display: block;
+  margin-block-start: 1em;
+  margin-block-end: 1em;
+  margin-inline-start: 15px;
+  margin-inline-end: 40px;
+}
+.post .post-content centerhead {
+  display: block;
+  font-weight: 300;
+  background-image: linear-gradient(to right, #fff, #8bc34a, #4caf50, #8bc34a, #fff);
+  background-color: #4caf50;
+  color: #fff;
+  font-size: 1.4em;
+  line-height: 1.6em;
+  margin: 14px 10px;
+  padding: 10px 0;
+  letter-spacing: 2px;
+  text-shadow: 1px 1px 1px #666;
+  text-align: center;
+  opacity: 0.8;
+}
+.post .post-content underline-quote {
+  display: block;
+  font-weight: 500;
+  color: #000;
+  font-size: 1em;
+  line-height: 1em;
+  margin: 8px 10% 8px 0;
+  padding: 6px 10px 4px 15px;
+  letter-spacing: 1px;
+  border-left: solid #333 3px;
+  border-bottom: solid #4caf50 1px;
 }
 .post .post-content blockquote p,
 .post .post-content .stressed p {
