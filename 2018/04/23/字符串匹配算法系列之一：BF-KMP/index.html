@@ -1,0 +1,1224 @@
+<!DOCTYPE html><html lang="zh-CN"><head><meta http-equiv="content-type" content="text/html; charset=utf-8"><meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0" name="viewport"><meta content="yes" name="apple-mobile-web-app-capable"><meta content="black-translucent" name="apple-mobile-web-app-status-bar-style"><meta content="telephone=no" name="format-detection"><meta name="description" content="Just a hobby, won't be big and professional like Linux."><title>字符串匹配算法系列之一：BF &amp;&amp; KMP | 断鸿声里，立尽斜阳</title><!-- 之前的google字体加载缓慢，换成本地加载--><!--link(rel="stylesheet", type="text/css", href="//fonts.css.network/css?family=Source+Code+Pro")--><link rel="stylesheet" href="https://flat2010.github.io/static/vendor/fonts/fonts.css"><link rel="stylesheet" type="text/css" href="/css/style.css?v=2.0.1"><link rel="stylesheet" type="text/css" href="/css/highlight.css?v=2.0.1"><link rel="Shortcut Icon" href="/favicon.ico"><link rel="bookmark" href="/favicon.ico"><link rel="apple-touch-icon" href="/apple-touch-icon.png"><link rel="apple-touch-icon-precomposed" href="/apple-touch-icon.png"><!--添加打赏连接--><!--link(rel='stylesheet', type='text/css', href=url_for(theme.css) + '/reward.scss')--><!--link(rel='stylesheet', type='text/x-scss', href=url_for(theme.css) + '/tooltip.css')--><!--end--><link rel="alternate" type="application/atom+xml" href="/atom.xml"></head><body><div class="body_container"><div id="header"><div class="site-name"><h1 class="hidden">字符串匹配算法系列之一：BF &amp;&amp; KMP</h1><a id="logo" href="/.">断鸿声里，立尽斜阳</a><p class="description">流萤弄月照玉窗，一纸红笺话思量</p></div><div id="nav-menu"><a href="/." class="current"><i class="fa fa-home"> 首页</i></a><a href="/archives/"><i class="fa fa-archive"> 时间线</i></a><a href="/about/"><i class="fa fa-user"> 关于</i></a><a href="/atom.xml"><i class="fa fa-rss"> 订阅</i></a></div><div id="search-form"><div id="result-mask" class="hide"></div><label><input id="search-key" type="text" autocomplete="off" placeholder="search"></label><div id="result-wrap" class="hide"><div id="search-result"></div></div><div class="hide"><template id="search-tpl"><div class="item"><a href="/{path}" title="{title}"><div class="title">{title}</div><div class="time">{date}</div><div class="tags">{tags}</div></a></div></template></div></div></div><div id="layout" class="layout-g"><div class="layout-l"><div class="content_container"><div class="post"><h1 class="post-title">字符串匹配算法系列之一：BF &amp;&amp; KMP</h1><div class="post-meta"><a href="/2018/04/23/字符串匹配算法系列之一：BF-KMP/#comments" class="comment-count"><i data-disqus-identifier="2018/04/23/字符串匹配算法系列之一：BF-KMP/" class="disqus-comment-count"></i>留言</a><p><span class="date">Apr 23, 2018</span><span><a href="/categories/字符串匹配/" class="category">字符串匹配</a></span><span><i id="busuanzi_container_page_pv"><i id="busuanzi_value_page_pv"></i><i>阅读</i></i></span><!-- 增加文章字数统计 Node-7.6.0+ 'npm i --save hexo-wordcount' or Node-7.6.0- 'npm install hexo-wordcount@2 --save'--><span><i id="word_count"></i><i>13,827 字</i></span><span><i id="read_time"></i><i>55 分钟</i></span></p></div><!-- 正文内容        --><div class="post-content"><p><img src="/2018/04/23/&#x5B57;&#x7B26;&#x4E32;&#x5339;&#x914D;&#x7B97;&#x6CD5;&#x7CFB;&#x5217;&#x4E4B;&#x4E00;&#xFF1A;BF-KMP/BF-KMP&#x9996;&#x56FE;.png" width="350" height="80"></p>
+<blockquote>
+<font color="#0000FF" face="&#x5FAE;&#x8F6F;&#x96C5;&#x9ED1;" size="4">Wisdom in the mind is better than money in the hand.</font>
+
+</blockquote>
+<hr>
+<h2 id="&#x4E00;&#x3001;&#x5F15;&#x8A00;"><a href="#&#x4E00;&#x3001;&#x5F15;&#x8A00;" class="headerlink" title="&#x4E00;&#x3001;&#x5F15;&#x8A00;"></a>&#x4E00;&#x3001;&#x5F15;&#x8A00;</h2><h3 id="1-1-&#x53CD;&#x9988;&#x4E4B;&#x6B87;"><a href="#1-1-&#x53CD;&#x9988;&#x4E4B;&#x6B87;" class="headerlink" title="1.1 &#x53CD;&#x9988;&#x4E4B;&#x6B87;"></a>1.1 &#x53CD;&#x9988;&#x4E4B;&#x6B87;</h3><p>&#x2003;&#x2003;&#x4ECA;&#x5E74;&#x5E74;&#x521D;&#x7684;&#x65F6;&#x5019;&#xFF0C;&#x7EC4;&#x5185;&#x63A5;&#x5230;&#x4E2A;&#x53CD;&#x9988;&#xFF0C;&#x5BA2;&#x6237;&#x5F88;&#x65E9;&#x4E4B;&#x524D;&#x8D2D;&#x4E70;&#x7684;&#x54B1;&#x4EEC;&#x516C;&#x53F8;&#x7684;&#x4E00;&#x6B3E;&#x4EA7;&#x54C1;&#x7CFB;&#x7EDF;&#x65E0;&#x6CD5;&#x6B63;&#x5E38;&#x542F;&#x52A8;&#x3002;&#x516C;&#x53F8;&#x7ECF;&#x521D;&#x6B65;&#x6392;&#x67E5;&#x540E;&#x786E;&#x5B9A;&#x6545;&#x969C;&#x539F;&#x56E0;&#x662F;&#x7531;&#x4E8E;&#x54B1;&#x4EEC;&#x5E94;&#x7528;&#x8BC6;&#x522B;&#x6A21;&#x5757;&#x5360;&#x7528;&#x7684;&#x5185;&#x5B58;&#x504F;&#x9AD8;&#xFF0C;&#x800C;&#x8FD9;&#x6B3E;&#x4EA7;&#x54C1;&#x53C8;&#x5C5E;&#x4E8E;&#x6BD4;&#x8F83;&#x8001;&#x7684;&#x578B;&#x53F7;&#xFF0C;&#x786C;&#x4EF6;&#x914D;&#x7F6E;&#x8F83;&#x4F4E;&#xFF0C;&#x542F;&#x52A8;&#x65F6;&#x5185;&#x5B58;&#x4E0D;&#x8DB3;&#x5F15;&#x8D77;&#x7684;&#x3002;<br>&#x2003;&#x2003;&#x6211;&#x4EEC;&#x7ECF;&#x8FC7;&#x6DF1;&#x5165;&#x5206;&#x6790;&#x53D1;&#x73B0;&#xFF0C;&#x5BFC;&#x81F4;&#x5E94;&#x7528;&#x8BC6;&#x522B;&#x6A21;&#x5757;&#x5185;&#x5B58;&#x5360;&#x7528;&#x7387;&#x5C45;&#x9AD8;&#x4E0D;&#x4E0B;&#x7684;&#x4E00;&#x4E2A;&#x4E3B;&#x8981;&#x539F;&#x56E0;&#x662F;AC&#x5F15;&#x64CE;&#x7684;&#x5177;&#x4F53;&#x4EE3;&#x7801;&#x5B9E;&#x73B0;&#x4E0A;&#x6709;&#x4E9B;&#x95EE;&#x9898;&#xFF0C;&#x6709;&#x5F88;&#x5927;&#x7684;&#x4F18;&#x5316;&#x7A7A;&#x95F4;&#x3002;&#x7ECF;&#x8FC7;&#x91CD;&#x65B0;&#x8BBE;&#x8BA1;&#x548C;&#x5B9E;&#x73B0;&#x540E;&#xFF0C;&#x5355;class&#x5185;&#x5B58;&#x5360;&#x7528;&#x7387;&#x76F4;&#x63A5;&#x964D;&#x4F4E;&#x4E86;100&#x591A;M&#xFF0C;&#x6574;&#x4E2A;class&#xFF08;&#x8FD8;&#x5305;&#x542B;&#x5176;&#x5B83;&#x5F88;&#x591A;&#x6A21;&#x5757;&#xFF09;&#x624D;&#x5360;&#x7528;&#x5185;&#x5B58;&#x7EA6;600M&#xFF0C;&#x6548;&#x679C;&#x53EF;&#x4EE5;&#x8BF4;&#x8FD8;&#x662F;&#x76F8;&#x5F53;&#x663E;&#x8457;&#x7684;&#x3002;<br>&#x2003;&#x2003;&#x6DF1;&#x5165;&#x6392;&#x67E5;&#x7684;&#x65F6;&#x5019;&#xFF0C;&#x5C11;&#x4E0D;&#x4E86;&#x8981;&#x53BB;&#x8FC7;N&#x904D;&#x5F15;&#x64CE;&#x4EE3;&#x7801;&#xFF0C;&#x800C;AC&#x591A;&#x6A21;&#x5339;&#x914D;&#x7B97;&#x6CD5;&#x81EA;&#x7136;&#x4E5F;&#x6210;&#x4E86;&#x6211;&#x4EEC;&#x7684;&#x91CD;&#x70B9;&#x5173;&#x6CE8;&#x5BF9;&#x8C61;&#x3002;&#x7ECF;&#x8FC7;&#x6211;&#x4EEC;&#x4E0D;&#x61C8;&#x7684;&#x52AA;&#x529B;&#xFF0C;&#x6700;&#x7EC8;&#x89E3;&#x51B3;&#x4E86;&#x8FD9;&#x4E2A;&#x95EE;&#x9898;&#xFF0C;&#x5728;&#x6B64;&#x5206;&#x4EAB;&#x51FA;&#x6765;&#xFF0C;&#x4EE5;&#x4F9B;&#x5927;&#x5BB6;&#x53C2;&#x8003;&#x3002;</p>
+<h3 id="1-2-&#x7CFB;&#x5217;&#x6587;&#x7AE0;"><a href="#1-2-&#x7CFB;&#x5217;&#x6587;&#x7AE0;" class="headerlink" title="1.2 &#x7CFB;&#x5217;&#x6587;&#x7AE0;"></a>1.2 &#x7CFB;&#x5217;&#x6587;&#x7AE0;</h3><p>&#x2003;&#x2003;&#x5176;&#x5B9E;&#x6700;&#x5F00;&#x59CB;&#x7684;&#x65F6;&#x5019;&#x5E76;&#x6CA1;&#x6709;&#x60F3;&#x5199;&#x6210;&#x7CFB;&#x5217;&#x7684;&#x6587;&#x7AE0;&#xFF0C;&#x56E0;&#x4E3A;&#x540E;&#x7EED;&#x7684;&#x5F15;&#x64CE;&#x6F14;&#x8FDB;&#x4F1A;&#x8FC1;&#x79FB;&#x5230;&#x5176;&#x5B83;&#x66F4;&#x9AD8;&#x6548;&#x7684;&#x5B57;&#x7B26;&#x4E32;&#x5339;&#x914D;&#x7B97;&#x6CD5;&#x4E0A;&#xFF0C;&#x56E0;&#x6B64;&#x6211;&#x4EEC;&#x51B3;&#x5B9A;&#x628A;&#x4E00;&#x4E9B;&#x5E38;&#x89C1;/&#x5E38;&#x7528;&#x7684;&#x5B57;&#x7B26;&#x4E32;&#x5339;&#x914D;&#x7B97;&#x6CD5;&#x90FD;&#x5206;&#x4EAB;&#x51FA;&#x6765;&#xFF0C;&#x65B9;&#x4FBF;&#x5BF9;&#x8FD9;&#x65B9;&#x9762;&#x611F;&#x5174;&#x8DA3;&#x7684;&#x540C;&#x5B66;&#x5B66;&#x4E60;&#x4E86;&#x89E3;&#xFF0C;&#x540C;&#x65F6;&#x4E5F;&#x4F5C;&#x4E3A;&#x6211;&#x4EEC;&#x7EC4;&#x7684;&#x4E00;&#x79CD;&#x6280;&#x672F;&#x79EF;&#x7D2F;&#xFF0C;&#x6B22;&#x8FCE;&#x5927;&#x5BB6;&#x79EF;&#x6781;&#x8DDF;&#x6211;&#x4EEC;&#x63A2;&#x8BA8;&#x4EA4;&#x6D41;&#x3002;</p>
+<h3 id="1-3-&#x524D;&#x6CE8;"><a href="#1-3-&#x524D;&#x6CE8;" class="headerlink" title="1.3 &#x524D;&#x6CE8;"></a>1.3 &#x524D;&#x6CE8;</h3><p>&#x2003;&#x2003;&#x672C;&#x7CFB;&#x5217;&#x6587;&#x7AE0;&#x7684;&#x76EE;&#x6807;&#x662F;&#x8BA9;&#x6CA1;&#x6709;&#x4EFB;&#x4F55;&#x5B57;&#x7B26;&#x4E32;&#x5339;&#x914D;/&#x7B97;&#x6CD5;&#x80CC;&#x666F;&#x7684;&#x540C;&#x5B66;&#x4E5F;&#x80FD;&#x8F7B;&#x677E;&#x7406;&#x89E3;&#xFF0C;&#x5728;&#x884C;&#x6587;&#x4E0A;&#x53EF;&#x80FD;&#x4F1A;&#x4E27;&#x5931;&#x4E00;&#x5B9A;&#x7684;&#x4E13;&#x4E1A;&#x548C;&#x7B80;&#x6D01;&#x6027;&#xFF0C;&#x5982;&#x6709;&#x4E0D;&#x59A5;&#xFF0C;&#x8BF7;&#x591A;&#x591A;&#x6307;&#x6B63;&#x3002;</p>
+<h2 id="&#x4E8C;&#x3001;&#x5B57;&#x7B26;&#x4E32;&#x5339;&#x914D;&#x7B97;&#x6CD5;"><a href="#&#x4E8C;&#x3001;&#x5B57;&#x7B26;&#x4E32;&#x5339;&#x914D;&#x7B97;&#x6CD5;" class="headerlink" title="&#x4E8C;&#x3001;&#x5B57;&#x7B26;&#x4E32;&#x5339;&#x914D;&#x7B97;&#x6CD5;"></a>&#x4E8C;&#x3001;&#x5B57;&#x7B26;&#x4E32;&#x5339;&#x914D;&#x7B97;&#x6CD5;</h2><h3 id="2-1-&#x7B80;&#x4ECB;"><a href="#2-1-&#x7B80;&#x4ECB;" class="headerlink" title="2.1 &#x7B80;&#x4ECB;"></a>2.1 &#x7B80;&#x4ECB;</h3><p>&#x2003;&#x2003;&#x5B57;&#x7B26;&#x4E32;&#x5339;&#x914D;&#x7B97;&#x6CD5;&#x81EA;&#x63D0;&#x51FA;&#x81F3;&#x4ECA;&#xFF0C;&#x53EF;&#x4EE5;&#x8BF4;&#x662F;&#x7855;&#x679C;&#x7D2F;&#x7D2F;&#x3002;&#x65E0;&#x6570;&#x4E1A;&#x754C;&#x5927;&#x4F6C;&#x524D;&#x8D74;&#x540E;&#x7EE7;&#x7684;&#x6295;&#x5165;&#x5230;&#x4E86;&#x7B97;&#x6CD5;&#x7684;&#x7814;&#x7A76;&#x4E2D;&#x3002;&#x65F6;&#x81F3;&#x4ECA;&#x65E5;&#xFF0C;&#x5DF2;&#x7ECF;&#x6709;&#x5927;&#x91CF;&#x6210;&#x719F;&#x7684;&#x5339;&#x914D;&#x7B97;&#x6CD5;&#xFF08;&#x53CA;&#x5176;&#x53D8;&#x5F02;&#x4F53;&#xFF09;&#xFF0C;&#x5BF9;&#x8FD9;&#x4E9B;&#x7B97;&#x6CD5;&#x6211;&#x4EEC;&#x603B;&#x7ED3;&#x51FA;&#x4E00;&#x5F20;&#x6982;&#x89C8;&#x8868;&#x5982;&#x4E0B;&#x6240;&#x793A;&#xFF08;&#x4EC5;&#x4EC5;&#x8986;&#x76D6;&#x4E86;&#x5927;&#x90E8;&#x5206;&#x7B97;&#x6CD5;&#xFF09;&#xFF1A;</p>
+<table>
+<thead>
+<tr>
+<th style="text-align:center">&#x7B97;&#x6CD5;&#x540D;&#x79F0;</th>
+<th style="text-align:center">&#x4E3B;&#x8981;&#x4F5C;&#x8005;</th>
+<th style="text-align:center">&#x63D0;&#x51FA;&#x5E74;&#x4EFD;</th>
+<th style="text-align:center">&#x5206;&#x7C7B;I</th>
+<th style="text-align:center">&#x5206;&#x7C7B;II</th>
+<th style="text-align:center">&#x5907;&#x6CE8;</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:center">Naive Algorithm<br>(Brute Force)</td>
+<td style="text-align:center">&#x2014;&#x2014;</td>
+<td style="text-align:center">&#x2014;&#x2014;</td>
+<td style="text-align:center">&#x5355;&#x6A21;&#x5339;&#x914D;</td>
+<td style="text-align:center">&#x2014;&#x2014;</td>
+<td style="text-align:center">&#x2014;&#x2014;</td>
+</tr>
+<tr>
+<td style="text-align:center">KMP</td>
+<td style="text-align:center">DONALD E. KNUTHf<br>JAMES H. MORRIS, JR.<br>VAUGHAN R. PRATT</td>
+<td style="text-align:center">1977</td>
+<td style="text-align:center">&#x5355;&#x6A21;&#x5339;&#x914D;</td>
+<td style="text-align:center">&#x524D;&#x7F00;&#x641C;&#x7D22;</td>
+<td style="text-align:center"><a href="http://www.cin.ufpe.br/~paguso/courses/if767/bib/KMP_1977.pdf" target="_blank" rel="noopener">Paper&#x4E0B;&#x8F7D;&#x5730;&#x5740;</a></td>
+</tr>
+<tr>
+<td style="text-align:center">BM</td>
+<td style="text-align:center">Stanford Researc<br>Xerox Palo Alto R</td>
+<td style="text-align:center">1977</td>
+<td style="text-align:center">&#x5355;&#x6A21;&#x5339;&#x914D;</td>
+<td style="text-align:center">&#x540E;&#x7F00;&#x641C;&#x7D22;</td>
+<td style="text-align:center"><a href="https://www.cs.utexas.edu/~moore/publications/fstrpos.pdf" target="_blank" rel="noopener">Paper&#x4E0B;&#x8F7D;&#x5730;&#x5740;</a></td>
+</tr>
+<tr>
+<td style="text-align:center">Horspool</td>
+<td style="text-align:center">R. NIGEL HORSPOOL</td>
+<td style="text-align:center">1980</td>
+<td style="text-align:center">&#x5355;&#x6A21;&#x5339;&#x914D;</td>
+<td style="text-align:center">&#x540E;&#x7F00;&#x641C;&#x7D22;</td>
+<td style="text-align:center"><a href="http://webhome.cs.uvic.ca/~nigelh/Publications/stringsearch.pdf" target="_blank" rel="noopener">Paper&#x4E0B;&#x8F7D;&#x5730;&#x5740;</a></td>
+</tr>
+<tr>
+<td style="text-align:center">Rabin-Karp</td>
+<td style="text-align:center">Richard M. Karp<br>Michael O. Rabin</td>
+<td style="text-align:center">1987</td>
+<td style="text-align:center">&#x5355;&#x6A21;&#x5339;&#x914D;</td>
+<td style="text-align:center">&#x2014;&#x2014;</td>
+<td style="text-align:center"><a href="https://pdfs.semanticscholar.org/c47d/151f09c567013761632c89e237431c6291a2.pdf" target="_blank" rel="noopener">Paper&#x4E0B;&#x8F7D;&#x5730;&#x5740;</a></td>
+</tr>
+<tr>
+<td style="text-align:center">Sunday</td>
+<td style="text-align:center">Daniel M.Sunday</td>
+<td style="text-align:center">1990</td>
+<td style="text-align:center">&#x5355;&#x6A21;&#x5339;&#x914D;</td>
+<td style="text-align:center">&#x524D;&#x7F00;&#x641C;&#x7D22;</td>
+<td style="text-align:center"><a href="https://csclub.uwaterloo.ca/~pbarfuss/p132-sunday.pdf" target="_blank" rel="noopener">Paper&#x4E0B;&#x8F7D;&#x5730;&#x5740;</a></td>
+</tr>
+<tr>
+<td style="text-align:center">Shift-And/Or</td>
+<td style="text-align:center">Ricardo A. Baeza-Yates</td>
+<td style="text-align:center">1992</td>
+<td style="text-align:center">&#x5355;&#x6A21;&#x5339;&#x914D;</td>
+<td style="text-align:center">&#x524D;&#x7F00;&#x641C;&#x7D22;</td>
+<td style="text-align:center"><a href="http://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.53.88&amp;rep=rep1&amp;type=pdf" target="_blank" rel="noopener">Paper&#x4E0B;&#x8F7D;&#x5730;&#x5740;</a></td>
+</tr>
+<tr>
+<td style="text-align:center">BDM</td>
+<td style="text-align:center">Maxime Crochemore</td>
+<td style="text-align:center">1994</td>
+<td style="text-align:center">&#x5355;&#x6A21;&#x5339;&#x914D;</td>
+<td style="text-align:center">&#x5B50;&#x4E32;&#x641C;&#x7D22;</td>
+<td style="text-align:center"><a href="https://www.researchgate.net/profile/Thierry_Lecroq/publication/226574953_Speeding_up_two_string-matching_algorithms/links/0f3175320a580a8da4000000/Speeding-up-two-string-matching-algorithms.pdf?origin=publication_detail" target="_blank" rel="noopener">Paper&#x4E0B;&#x8F7D;&#x5730;&#x5740;</a></td>
+</tr>
+<tr>
+<td style="text-align:center">BNDM</td>
+<td style="text-align:center">Gonzalo Navarro</td>
+<td style="text-align:center">2000</td>
+<td style="text-align:center">&#x5355;&#x6A21;&#x5339;&#x914D;</td>
+<td style="text-align:center">&#x5B50;&#x4E32;&#x641C;&#x7D22;</td>
+<td style="text-align:center"><a href="https://www.dcc.uchile.cl/TR/1998/TR_DCC-1998-004.pdf" target="_blank" rel="noopener">Paper&#x4E0B;&#x8F7D;&#x5730;&#x5740;</a></td>
+</tr>
+<tr>
+<td style="text-align:center">BLIM</td>
+<td style="text-align:center">M. Oguzhan K&#xFC;lekci</td>
+<td style="text-align:center">2010</td>
+<td style="text-align:center">&#x5355;&#x6A21;&#x5339;&#x914D;</td>
+<td style="text-align:center">&#x5B50;&#x4E32;&#x641C;&#x7D22;</td>
+<td style="text-align:center"><a href="https://www.researchgate.net/profile/M_Kuelekci/publication/225104238_BLIM_A_New_Bit-Parallel_Pattern_Matching_Algorithm_Overcoming_Computer_Word_Size_Limitation/links/004635396b507e4e86000000/BLIM-A-New-Bit-Parallel-Pattern-Matching-Algorithm-Overcoming-Computer-Word-Size-Limitation.pdf?origin=publication_detail" target="_blank" rel="noopener">Paper&#x4E0B;&#x8F7D;&#x5730;&#x5740;</a></td>
+</tr>
+<tr>
+<td style="text-align:center">Commentz-Walter</td>
+<td style="text-align:center">Beate Commentz-Walter</td>
+<td style="text-align:center">1979</td>
+<td style="text-align:center">&#x591A;&#x6A21;&#x5339;&#x914D;</td>
+<td style="text-align:center">&#x540E;&#x7F00;&#x641C;&#x7D22;</td>
+<td style="text-align:center"><a href="https://www.hs-albsig.de/studium/wirtschaftsinformatik/Documents/commentzwalterextab.pdf" target="_blank" rel="noopener">Paper&#x4E0B;&#x8F7D;&#x5730;&#x5740;</a></td>
+</tr>
+<tr>
+<td style="text-align:center">Wu-Manber</td>
+<td style="text-align:center">Sun Wu<br>Udi Manber</td>
+<td style="text-align:center">1994</td>
+<td style="text-align:center">&#x591A;&#x6A21;&#x5339;&#x914D;</td>
+<td style="text-align:center">&#x540E;&#x7F00;&#x641C;&#x7D22;</td>
+<td style="text-align:center"><a href="http://webglimpse.net/pubs/TR94-17.pdf" target="_blank" rel="noopener">Paper&#x4E0B;&#x8F7D;&#x5730;&#x5740;</a></td>
+</tr>
+<tr>
+<td style="text-align:center">SBDM</td>
+<td style="text-align:center">A. BLUMER</td>
+<td style="text-align:center">1986</td>
+<td style="text-align:center">&#x591A;&#x6A21;&#x5339;&#x914D;</td>
+<td style="text-align:center">&#x5B50;&#x4E32;&#x641C;&#x7D22;</td>
+<td style="text-align:center"><a href="http://www.cs.colostate.edu/pubserv/pubs/Blumer-rmm-invertedFiles.pdf" target="_blank" rel="noopener">Paper&#x4E0B;&#x8F7D;&#x5730;&#x5740;</a></td>
+</tr>
+<tr>
+<td style="text-align:center">SBOM</td>
+<td style="text-align:center">Maxime Crochemore</td>
+<td style="text-align:center">1999</td>
+<td style="text-align:center">&#x591A;&#x6A21;&#x5339;&#x914D;</td>
+<td style="text-align:center">&#x5B50;&#x4E32;&#x641C;&#x7D22;</td>
+<td style="text-align:center"><a href="http://musicweb.ucsd.edu/~sdubnov/CATbox/Reader/allauzen99factor.pdf" target="_blank" rel="noopener">Paper&#x4E0B;&#x8F7D;&#x5730;&#x5740;</a></td>
+</tr>
+<tr>
+<td style="text-align:center">AC</td>
+<td style="text-align:center">Alfred V.Aho<br>Margaret J.Corasick</td>
+<td style="text-align:center">1975</td>
+<td style="text-align:center">&#x591A;&#x6A21;&#x5339;&#x914D;</td>
+<td style="text-align:center">&#x524D;&#x7F00;&#x641C;&#x7D22;</td>
+<td style="text-align:center"><a href="https://biit.cs.ut.ee/~vilo/edu/2002-03/Tekstialgoritmid_I/Articles/Exact/Aho-Corasick.pdf" target="_blank" rel="noopener">Paper&#x4E0B;&#x8F7D;&#x5730;&#x5740;</a></td>
+</tr>
+</tbody>
+</table>
+<p>&#x2003;&#x2003;&#x6CE8;&#xFF1A;&#x8868;&#x683C;&#x4E2D;&#x4EC5;&#x4EC5;&#x5217;&#x51FA;&#x4E86;&#x4E00;&#x4E9B;Paper&#x80FD;&#x627E;&#x5230;&#x7684;&#x7B97;&#x6CD5;&#xFF0C;&#x5176;&#x5B83;&#x7684;&#x5219;&#x6CA1;&#x6709;&#x5728;&#x6B64;&#x5217;&#x51FA;&#x3002;</p>
+<h3 id="2-2-&#x672F;&#x8BED;-amp-amp-&#x7EA6;&#x5B9A;"><a href="#2-2-&#x672F;&#x8BED;-amp-amp-&#x7EA6;&#x5B9A;" class="headerlink" title="2.2 &#x672F;&#x8BED;&amp;&amp;&#x7EA6;&#x5B9A;"></a>2.2 <a name="provision"></a>&#x672F;&#x8BED;&amp;&amp;&#x7EA6;&#x5B9A;</h3><p>&#x2003;&#x2003;&#x4E3A;&#x4E86;&#x5C3D;&#x91CF;&#x4FDD;&#x6301;&#x8BED;&#x8A00;&#x7684;&#x7B80;&#x6D01;&#xFF0C;&#x6211;&#x4EEC;&#x5728;&#x6B64;&#x5BF9;&#x4E00;&#x4E9B;&#x672F;&#x8BED;&#x53CA;&#x7EA6;&#x5B9A;&#x505A;&#x4E00;&#x4E2A;&#x4ECB;&#x7ECD;&#x3002;</p>
+<h4 id="2-2-1-&#x76EE;&#x6807;&#x4E32;"><a href="#2-2-1-&#x76EE;&#x6807;&#x4E32;" class="headerlink" title="2.2.1 &#x76EE;&#x6807;&#x4E32;"></a>2.2.1 &#x76EE;&#x6807;&#x4E32;</h4><p>&#x2003;&#x2003;&#x7ED9;&#x5B9A;&#x4E00;&#x4E32;&#x5B57;&#x7B26;&#xFF0C;&#x6BD4;&#x5982;&#x201D;Sometimes, the everlasting hate have no unique period.&#x201D;&#xFF0C;&#x6211;&#x4EEC;&#x8981;&#x5728;&#x8FD9;&#x4E32;&#x5B57;&#x7B26;&#x91CC;&#x9762;&#x5BFB;&#x627E;&#x67D0;&#x4E2A;/&#x67D0;&#x4E9B;&#x5355;&#x8BCD;/&#x5B57;&#x6BCD;&#xFF0C;&#x6211;&#x4EEC;&#x79F0;&#x8FD9;&#x4E32;&#x5B57;&#x7B26;&#x4E3A;<strong>&#x76EE;&#x6807;&#x4E32;(Text)</strong>&#xFF0C;&#x5176;&#x957F;&#x5EA6;&#x8BB0;&#x4E3A;<strong>$n$</strong>&#xFF0C;&#x6307;&#x5411;&#x76EE;&#x6807;&#x4E32;&#x7684;&#x7D22;&#x5F15;&#x53D8;&#x91CF;&#x6211;&#x4EEC;&#x7528;$r,\  r=1,2,3,&#x2026;,n$&#x8868;&#x793A;&#x3002;<br>&#x2003;&#x2003;&#x5373;$t_r$&#x8868;&#x793A;&#x76EE;&#x6807;&#x4E32;&#x7684;&#x7B2C;$r$&#x4E2A;&#x5B57;&#x7B26;&#xFF0C;&#x76EE;&#x6807;&#x4E32;&#x4E3A;&#xFF1A;$Text = t_1 t_2 t_3 &#x2026;  t_r &#x2026;t_n$&#x3002;</p>
+<h4 id="2-2-2-&#x7279;&#x5F81;&#x4E32;"><a href="#2-2-2-&#x7279;&#x5F81;&#x4E32;" class="headerlink" title="2.2.2 &#x7279;&#x5F81;&#x4E32;"></a>2.2.2 &#x7279;&#x5F81;&#x4E32;</h4><p>&#x2003;&#x2003;&#x63A5;&#x4E0A;&#x9762;&#x8BF4;&#x7684;&#xFF0C;&#x6211;&#x4EEC;&#x8981;&#x5BFB;&#x627E;&#x7684;&#x67D0;&#x4E2A;/&#x67D0;&#x4E9B;&#x5355;&#x8BCD;/&#x5B57;&#x6BCD;&#xFF08;&#x6BD4;&#x5982;&#x6211;&#x8981;&#x627E;&#x201D;unique&#x201D;&#xFF09;&#xFF0C;&#x6211;&#x4EEC;&#x79F0;&#x4E4B;&#x4E3A;<strong>&#x7279;&#x5F81;&#x4E32;(Pattern)</strong>&#xFF0C;&#x5176;&#x957F;&#x5EA6;&#x8BB0;&#x4E3A;<strong>$m$</strong>&#xFF0C;&#x6307;&#x5411;&#x7279;&#x5F81;&#x4E32;&#x7684;&#x7D22;&#x5F15;&#x53D8;&#x91CF;&#x6211;&#x4EEC;&#x7528;$s, \ s=1,2,3,&#x2026;,m$&#x8868;&#x793A;&#x3002;<br>&#x2003;&#x2003;&#x5373;$p_s$&#x8868;&#x793A;&#x7279;&#x5F81;&#x4E32;&#x7684;&#x7B2C;$s$&#x4E2A;&#x5B57;&#x7B26;&#xFF0C;&#x7279;&#x5F81;&#x4E32;&#x4E3A;&#xFF1A;$Pattern = p_1 p_2 p_3 &#x2026; p_s &#x2026; p_m$&#x3002;</p>
+<h3 id="2-3-Naive-Algorithm-Brute-Force-&#x7B97;&#x6CD5;"><a href="#2-3-Naive-Algorithm-Brute-Force-&#x7B97;&#x6CD5;" class="headerlink" title="2.3 Naive Algorithm(Brute Force)&#x7B97;&#x6CD5;"></a>2.3 Naive Algorithm(Brute Force)&#x7B97;&#x6CD5;</h3><p>&#x2003;&#x2003;&#x5BF9;&#x4E8E;IT&#x5F00;&#x53D1;&#x4EBA;&#x5458;&#x6765;&#x8BF4;&#xFF0C;&#x5B57;&#x7B26;&#x4E32;&#x5339;&#x914D;/&#x68C0;&#x7D22;&#x53EF;&#x4EE5;&#x8BF4;&#x662F;&#x4F7F;&#x7528;&#x9891;&#x7387;&#x6BD4;&#x8F83;&#x9AD8;&#x7684;&#x4E00;&#x79CD;&#x64CD;&#x4F5C;&#x4E86;&#x3002;&#x5373;&#x4F7F;&#x6211;&#x4EEC;&#x7684;400&#x59B9;&#x5B50;&#xFF0C;&#x6BCF;&#x5929;&#x4E5F;&#x4F1A;&#x6709;&#x5927;&#x91CF;&#x7684;&#x5B57;&#x7B26;&#x5339;&#x914D;&#x64CD;&#x4F5C;&#xFF0C;&#x6BD4;&#x5982;&#x4F7F;&#x7528;Windows&#x81EA;&#x5E26;&#x7684;&#x641C;&#x7D22;&#x6587;&#x4EF6;&#x529F;&#x80FD;&#x3002;<br>&#x2003;&#x2003;&#x5BF9;&#x4E8E;&#x5B57;&#x7B26;&#x5339;&#x914D;&#x7684;&#x8FD9;&#x4E00;&#x7CFB;&#x5217;&#x7B97;&#x6CD5;&#xFF0C;&#x6211;&#x4EEC;&#x5148;&#x6765;&#x4ECB;&#x7ECD;&#x6700;&#x7B80;&#x5355;&#xFF0C;&#x6700;&#x6613;&#x61C2;&#xFF0C;&#x4F46;&#x4E5F;&#x662F;&#x6548;&#x7387;&#x6700;&#x4F4E;&#x7684;&#x4E00;&#x79CD;&#x3002;&#x7531;&#x4E8E;&#x8FD9;&#x79CD;&#x7B97;&#x6CD5;&#x8DDF;&#x6211;&#x4EEC;&#x5927;&#x8111;&#x7684;&#x601D;&#x7EF4;&#x6A21;&#x5F0F;&#x6BD4;&#x8F83;&#x8D34;&#x8FD1;&#xFF0C;&#x56E0;&#x6B64;&#x5728;&#x4E0D;&#x9700;&#x8981;&#x4EFB;&#x4F55;&#x7B97;&#x6CD5;&#x3001;&#x8BA1;&#x7B97;&#x673A;&#x7B49;&#x7684;&#x76F8;&#x5173;&#x77E5;&#x8BC6;&#x7684;&#x60C5;&#x51B5;&#x4E0B;&#xFF0C;&#x4E5F;&#x80FD;&#x60F3;&#x51FA;&#x6765;&#x3002;&#x8FD9;&#x5C31;&#x662F;&#x6211;&#x4EEC;&#x8981;&#x4ECB;&#x7ECD;&#x7684;Naive Algorithm&#xFF08;&#x6734;&#x7D20;&#x7B97;&#x6CD5;&#xFF0C;&#x540D;&#x5B57;&#x679C;&#x7136;&#x5F88;&#x6734;&#x7D20;&#xFF09;&#x6216;&#x8005;&#x79F0;&#x4E3A;Brute Force&#xFF08;&#x66B4;&#x529B;&#x7B97;&#x6CD5;&#xFF0C;&#x6211;&#x60F3;&#x8FD9;&#x4E2A;&#x540D;&#x5B57;&#x662F;&#x7F18;&#x4E8E;&#x5176;&#x5B9E;&#x73B0;&#x601D;&#x8DEF;&#x7B80;&#x5355;&#x7C97;&#x66B4;&#xFF09;&#x3002;<br>&#x2003;&#x2003;&#x7ED3;&#x5408;&#x5B9E;&#x9645;&#x4F8B;&#x5B50;&#x6765;&#x8BB2;&#xFF0C;&#x6709;&#x4E00;&#x4E32;&#x5B57;&#x7B26;<code>aabcabcabcacabc</code>&#xFF08;&#x5373;&#x6211;&#x4EEC;&#x7684;&#x76EE;&#x6807;&#x4E32;&#xFF09;&#xFF0C;&#x8981;&#x8BA9;&#x4F60;&#x5728;&#x91CC;&#x9762;&#x627E;<code>abcabcacab</code>&#xFF08;&#x5373;&#x6211;&#x4EEC;&#x7684;&#x7279;&#x5F81;&#x4E32;&#xFF09;&#xFF0C;&#x5E76;&#x4E14;&#x544A;&#x8BC9;&#x4F60;&#x5B8C;&#x5168;&#x4E0D;&#x7528;&#x8003;&#x8651;&#x6548;&#x7387;&#xFF0C;&#x80FD;&#x627E;&#x51FA;&#x6765;&#x5C31;&#x7B97;&#x5B8C;&#x6210;&#x4EFB;&#x52A1;&#xFF0C;&#x76EE;&#x6807;&#x4E32;&#x548C;&#x7279;&#x5F81;&#x4E32;&#x5982;&#x4E0B;&#x6240;&#x793A;&#xFF1A;</p>
+<p>$$<br>\begin{split}<br>Text&amp;: \qquad aabcabcabcacabc \\\\<br>Pattern&amp;: \qquad abcabcacab \\\\<br>\end{split}<br>$$</p>
+<p>&#x2003;&#x2003;&#x8BE5;&#x600E;&#x4E48;&#x505A;&#x5462;&#xFF1F;&#x806A;&#x660E;&#x7684;&#x4F60;&#x7565;&#x52A0;&#x601D;&#x7D22;&#x5C31;&#x627E;&#x5230;&#x4E86;&#x7B54;&#x6848;&#xFF0C;&#x6211;&#x62FF;&#x7740;&#x7279;&#x5F81;&#x4E32;&#xFF0C;&#x6BD4;&#x5BF9;&#x7740;&#x76EE;&#x6807;&#x4E32;&#xFF0C;&#x4ECE;&#x524D;&#x5F80;&#x540E;&#xFF0C;&#x6328;&#x4E2A;&#x6328;&#x4E2A;&#x53BB;&#x6BD4;&#x8F83;&#x3002;&#x867D;&#x7136;&#x5F88;&#x7B80;&#x5355;&#xFF0C;&#x6211;&#x4EEC;&#x8FD8;&#x662F;&#x628A;&#x8FD9;&#x4E2A;&#x8FC7;&#x7A0B;&#x753B;&#x4E00;&#x4E0B;&#xFF08;<strong>&#x4E3A;&#x4E86;&#x65B9;&#x4FBF;&#x5BF9;&#x6BD4;&#xFF0C;&#x56FE;&#x4E2D;&#x7EFF;&#x8272;&#x8868;&#x793A;&#x5339;&#x914D;&#x6210;&#x529F;&#x5B57;&#x7B26;&#xFF0C;&#x7EA2;&#x8272;&#x8868;&#x793A;&#x5339;&#x914D;&#x5931;&#x8D25;&#x5B57;&#x7B26;&#x3002;</strong>&#xFF09;&#xFF0C;&#x5982;&#x4E0B;&#x6240;&#x793A;&#xFF1A;</p>
+<table>
+<thead>
+<tr>
+<th style="text-align:center">Index</th>
+<th style="text-align:center">1</th>
+<th style="text-align:center">2</th>
+<th style="text-align:center">3</th>
+<th style="text-align:center">4</th>
+<th style="text-align:center">5</th>
+<th style="text-align:center">6</th>
+<th style="text-align:center">7</th>
+<th style="text-align:center">8</th>
+<th style="text-align:center">9</th>
+<th style="text-align:center">10</th>
+<th style="text-align:center">11</th>
+<th style="text-align:center">12</th>
+<th style="text-align:center">13</th>
+<th style="text-align:center">14</th>
+<th style="text-align:center">15</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:center">Text</td>
+<td style="text-align:center">$a$</td>
+<td style="text-align:center">$a$</td>
+<td style="text-align:center">$b$</td>
+<td style="text-align:center">$c$</td>
+<td style="text-align:center">$a$</td>
+<td style="text-align:center">$b$</td>
+<td style="text-align:center">$c$</td>
+<td style="text-align:center">$a$</td>
+<td style="text-align:center">$b$</td>
+<td style="text-align:center">$c$</td>
+<td style="text-align:center">$a$</td>
+<td style="text-align:center">$c$</td>
+<td style="text-align:center">$a$</td>
+<td style="text-align:center">$b$</td>
+<td style="text-align:center">$c$</td>
+</tr>
+<tr>
+<td style="text-align:center">Step1</td>
+<td style="text-align:center">$\color{green}{a}$</td>
+<td style="text-align:center">$\color{red}{b}$</td>
+<td style="text-align:center">$c$</td>
+<td style="text-align:center">$a$</td>
+<td style="text-align:center">$b$</td>
+<td style="text-align:center">$c$</td>
+<td style="text-align:center">$a$</td>
+<td style="text-align:center">$c$</td>
+<td style="text-align:center">$a$</td>
+<td style="text-align:center">$b$</td>
+<td style="text-align:center"></td>
+<td style="text-align:center"></td>
+<td style="text-align:center"></td>
+<td style="text-align:center"></td>
+<td style="text-align:center"></td>
+</tr>
+<tr>
+<td style="text-align:center">Step2</td>
+<td style="text-align:center"></td>
+<td style="text-align:center">$\color{green}{a}$</td>
+<td style="text-align:center">$\color{green}{b}$</td>
+<td style="text-align:center">$\color{green}{c}$</td>
+<td style="text-align:center">$\color{green}{a}$</td>
+<td style="text-align:center">$\color{green}{b}$</td>
+<td style="text-align:center">$\color{green}{c}$</td>
+<td style="text-align:center">$\color{green}{a}$</td>
+<td style="text-align:center">$\color{green}{c}$</td>
+<td style="text-align:center">$\color{green}{a}$</td>
+<td style="text-align:center">$ \color{red}{b}$</td>
+<td style="text-align:center"></td>
+<td style="text-align:center"></td>
+<td style="text-align:center"></td>
+<td style="text-align:center"></td>
+</tr>
+<tr>
+<td style="text-align:center">Step3</td>
+<td style="text-align:center"></td>
+<td style="text-align:center"></td>
+<td style="text-align:center">$\color{red}{a}$</td>
+<td style="text-align:center">$b$</td>
+<td style="text-align:center">$c$</td>
+<td style="text-align:center">$a$</td>
+<td style="text-align:center">$b$</td>
+<td style="text-align:center">$c$</td>
+<td style="text-align:center">$a$</td>
+<td style="text-align:center">$c$</td>
+<td style="text-align:center">$a$</td>
+<td style="text-align:center">$b$</td>
+<td style="text-align:center"></td>
+<td style="text-align:center"></td>
+<td style="text-align:center"></td>
+</tr>
+<tr>
+<td style="text-align:center">Step4</td>
+<td style="text-align:center"></td>
+<td style="text-align:center"></td>
+<td style="text-align:center"></td>
+<td style="text-align:center">$\color{red}{a}$</td>
+<td style="text-align:center">$b$</td>
+<td style="text-align:center">$c$</td>
+<td style="text-align:center">$a$</td>
+<td style="text-align:center">$b$</td>
+<td style="text-align:center">$c$</td>
+<td style="text-align:center">$a$</td>
+<td style="text-align:center">$c$</td>
+<td style="text-align:center">$a$</td>
+<td style="text-align:center">$b$</td>
+<td style="text-align:center"></td>
+<td style="text-align:center"></td>
+</tr>
+<tr>
+<td style="text-align:center">Step5</td>
+<td style="text-align:center"></td>
+<td style="text-align:center"></td>
+<td style="text-align:center"></td>
+<td style="text-align:center"></td>
+<td style="text-align:center">$\color{green}{a}$</td>
+<td style="text-align:center">$\color{green}{b}$</td>
+<td style="text-align:center">$\color{green}{c}$</td>
+<td style="text-align:center">$\color{green}{a}$</td>
+<td style="text-align:center">$\color{green}{b}$</td>
+<td style="text-align:center">$\color{green}{c}$</td>
+<td style="text-align:center">$\color{green}{a}$</td>
+<td style="text-align:center">$\color{green}{c}$</td>
+<td style="text-align:center">$\color{green}{a}$</td>
+<td style="text-align:center">$ \color{green}{b}$</td>
+<td style="text-align:center"></td>
+</tr>
+<tr>
+<td style="text-align:center">Step6</td>
+<td style="text-align:center"></td>
+<td style="text-align:center"></td>
+<td style="text-align:center"></td>
+<td style="text-align:center"></td>
+<td style="text-align:center"></td>
+<td style="text-align:center">$\color{red}{a}$</td>
+<td style="text-align:center">$b$</td>
+<td style="text-align:center">$c$</td>
+<td style="text-align:center">$a$</td>
+<td style="text-align:center">$b$</td>
+<td style="text-align:center">$c$</td>
+<td style="text-align:center">$a$</td>
+<td style="text-align:center">$c$</td>
+<td style="text-align:center">$a$</td>
+<td style="text-align:center">$b$</td>
+</tr>
+<tr>
+<td style="text-align:center">Done!</td>
+<td style="text-align:center"></td>
+<td style="text-align:center"></td>
+<td style="text-align:center"></td>
+<td style="text-align:center"></td>
+<td style="text-align:center"></td>
+<td style="text-align:center"></td>
+<td style="text-align:center"></td>
+<td style="text-align:center"></td>
+<td style="text-align:center"></td>
+<td style="text-align:center"></td>
+<td style="text-align:center"></td>
+<td style="text-align:center"></td>
+<td style="text-align:center"></td>
+<td style="text-align:center"></td>
+<td style="text-align:center"></td>
+</tr>
+</tbody>
+</table>
+<p>&#x2003;&#x2003;&#x53EF;&#x4EE5;&#x770B;&#x51FA;&#xFF0C;&#x76F4;&#x5230;&#x7B2C;5&#x6B21;&#x7684;&#x65F6;&#x5019;&#xFF0C;&#x6211;&#x4EEC;&#x624D;&#x627E;&#x5230;&#x4E86;&#x4E00;&#x4E2A;&#x5B8C;&#x5168;&#x5339;&#x914D;&#x3002;&#x8FD9;&#x4E2A;&#x7B97;&#x6CD5;&#x975E;&#x5E38;&#x7B80;&#x5355;&#x76F4;&#x767D;&#xFF0C;&#x5C31;&#x4E0D;&#x591A;&#x8BF4;&#xFF0C;&#x5176;&#x65F6;&#x95F4;&#x590D;&#x6742;&#x5EA6;&#xFF08;&#x6700;&#x574F;&#x60C5;&#x51B5;&#x4E0B;&#xFF09;&#x4E3A;$\color{red}{O((n - m + 1)m)}$&#x3002;<br>&#x2003;&#x2003;&#x5173;&#x4E8E;&#x65F6;&#x95F4;&#x590D;&#x6742;&#x5EA6;&#xFF0C;&#x8003;&#x8651;&#x5230;&#x6709;&#x5C11;&#x6570;&#x540C;&#x5B66;&#x6CA1;&#x6709;&#x5B66;&#x8FC7;&#x7B97;&#x6CD5;&#x5206;&#x6790;&#xFF0C;&#x5728;&#x8FD9;&#x91CC;&#x5C31;&#x591A;&#x8BF4;&#x51E0;&#x53E5;&#x3002;&#x65F6;&#x95F4;&#x590D;&#x6742;&#x5EA6;&#x662F;&#x7528;&#x6765;<strong>&#x5B9A;&#x6027;&#xFF08;&#x6CE8;&#x610F;&#x975E;&#x5B9A;&#x91CF;&#xFF09;</strong>&#x63CF;&#x8FF0;&#x7B97;&#x6CD5;&#x8FD0;&#x884C;&#x65F6;&#x95F4;&#xFF08;&#x6548;&#x7387;&#xFF09;&#x7684;&#x4E00;&#x4E2A;&#x53C2;&#x6570;&#xFF0C;&#x5E38;&#x7528;&#x8BB0;&#x53F7;$O$(ooxx)&#x6765;&#x8868;&#x793A;&#xFF0C;&#x6211;&#x4EEC;&#x5E38;&#x7528;&#x7684;&#x65F6;&#x95F4;&#x590D;&#x6742;&#x5EA6;&#x6709;&#xFF1A;</p>
+<p>$$<br>\underbrace{O(1)}_{&#x5E38;&#x6570;} &lt; \underbrace{O(logN)}_{&#x5BF9;&#x6570;} &lt; \underbrace{O(N)}_{&#x7EBF;&#x6027;} &lt; \underbrace{O(N \cdot logN)}_{&#x7EBF;&#x6027;&#x5BF9;&#x6570;} &lt; \underbrace{O(N^{m=2,3,&#x2026;})}_{m&#x6B21;&#x65B9;} &lt; \underbrace{O(2^N)}_{&#x6307;&#x6570;&#x7EA7;} &lt; \underbrace{O(N!)}_{&#x9636;&#x4E58;}<br>$$</p>
+<p>&#x2003;&#x2003;&#x4ECE;&#x5DE6;&#x5F80;&#x53F3;&#xFF0C;&#x65F6;&#x95F4;&#x590D;&#x6742;&#x5EA6;&#x8D8A;&#x6765;&#x8D8A;&#x9AD8;&#xFF0C;&#x800C;&#x7B97;&#x6CD5;&#x7684;&#x6548;&#x7387;&#x8D8A;&#x6765;&#x8D8A;&#x4F4E;&#x3002;</p>
+<h3 id="2-4-KMP-Knuth&#x2013;Morris&#x2013;Pratt-&#x7B97;&#x6CD5;"><a href="#2-4-KMP-Knuth&#x2013;Morris&#x2013;Pratt-&#x7B97;&#x6CD5;" class="headerlink" title="2.4 KMP(Knuth&#x2013;Morris&#x2013;Pratt)&#x7B97;&#x6CD5;"></a>2.4 KMP(Knuth&#x2013;Morris&#x2013;Pratt)&#x7B97;&#x6CD5;</h3><p>&#x2003;&#x2003;KMP&#x7B97;&#x6CD5;&#x5C5E;&#x4E8E;&#x5B57;&#x7B26;&#x4E32;&#x5339;&#x914D;&#x4E2D;&#x6BD4;&#x8F83;&#x7ECF;&#x5178;&#x7684;&#x7B97;&#x6CD5;&#xFF0C;&#x5B83;&#x540E;&#x9762;&#x63D0;&#x51FA;&#x6765;&#x7684;&#x5F88;&#x591A;&#x7B97;&#x6CD5;&#x90FD;&#x501F;&#x9274;&#x5B83;&#x7684;&#x4E00;&#x4E9B;&#x60F3;&#x6CD5;&#x3002;<br>&#x2003;&#x2003;&#x524D;&#x9762;&#x7684;BF&#x7B97;&#x6CD5;&#x5B9E;&#x5728;&#x662F;&#x592A;&#x7E41;&#x7410;&#x4E86;&#xFF0C;&#x6BCF;&#x6B21;&#x53EA;&#x80FD;&#x8DF3;&#x4E00;&#x683C;&#x6765;&#x5F00;&#x59CB;&#x65B0;&#x4E00;&#x8F6E;&#x7684;&#x5339;&#x914D;&#xFF0C;&#x6BCF;&#x4E00;&#x8F6E;&#x7684;&#x5339;&#x914D;&#x8FD8;&#x9700;&#x8981;&#x9010;&#x4E2A;&#x9010;&#x4E2A;&#x5B57;&#x7B26;&#x53BB;&#x6BD4;&#x8F83;&#xFF0C;&#x7B80;&#x76F4;&#x7D2F;&#x6B7B;&#x4E2A;&#x4EBA;&#xFF0C;&#x8FD9;&#x4E5F;&#x662F;&#x5B83;&#x6548;&#x7387;&#x6781;&#x4F4E;&#x7684;&#x539F;&#x56E0;&#x6240;&#x5728;&#x3002;&#x90A3;&#x4E48;&#x6709;&#x6CA1;&#x6709;&#x4EC0;&#x4E48;&#x65B9;&#x6CD5;&#x53EF;&#x4EE5;&#x6539;&#x8FDB;&#x5462;&#xFF1F;&#x51E0;&#x4E2A;&#x5927;&#x725B;&#x7422;&#x78E8;&#x4E00;&#x756A;&#x4E4B;&#x540E;&#xFF0C;&#x5C31;&#x627E;&#x5230;&#x4E86;&#x529E;&#x6CD5;&#xFF0C;&#x5E76;&#x4E14;&#x8FD9;&#x4E2A;&#x529E;&#x6CD5;&#x8FD8;&#x6BD4;&#x8F83;&#x597D;&#x4F7F;&#x3002;</p>
+<div style="text-align:center;"><img src="/2018/04/23/&#x5B57;&#x7B26;&#x4E32;&#x5339;&#x914D;&#x7B97;&#x6CD5;&#x7CFB;&#x5217;&#x4E4B;&#x4E00;&#xFF1A;BF-KMP/Donald Ervin Knuth&#x8096;&#x50CF;.jpg" width="200" height="220"><font size="1.8">&#x56FE;2-1&#x3000;&#x3000;Donald Ervin Knuth</font></div><br>&#x2003;&#x2003;<font size="1.8" color="grey">&#x63D0;&#x51FA;&#x8FD9;&#x4E2A;&#x7B97;&#x6CD5;&#x7684;&#x51E0;&#x4E2A;&#x4EBA;&#x91CC;&#x9762;&#xFF0C;&#x6709;&#x4E00;&#x4F4D;&#x53EB;<strong>Donald Ervin Knuth</strong>&#x7684;&#x795E;&#x4EBA;&#xFF08;&#x4E0A;&#x56FE;2-1&#xFF09;&#xFF0C;&#x4E0D;&#x5F97;&#x4E0D;&#x516B;&#x5366;&#x4E00;&#x4E0B;&#x3002;&#x4ED6;&#x662F;1974&#x5E74;&#x7684;&#x56FE;&#x7075;&#x5956;&#x83B7;&#x5F97;&#x8005;&#xFF0C;&#x8FD9;&#x6837;&#x7684;&#x5927;&#x725B;&#x5E73;&#x65F6;&#x5199;&#x5199;&#x4E66;&#x51FA;&#x4E2A;&#x7248;&#x3001;&#x6572;&#x6572;&#x4EE3;&#x7801;&#x8DD1;&#x4E2A;&#x8F6F;&#x4EF6;&#x8DDF;&#x73A9;&#x513F;&#x4F3C;&#x7684;&#xFF0C;&#x300A;&#x8BA1;&#x7B97;&#x673A;&#x7A0B;&#x5E8F;&#x8BBE;&#x8BA1;&#x7684;&#x827A;&#x672F;&#x300B;&#x5C31;&#x662F;&#x4ED6;&#x5199;&#x7684;&#x3002;&#x8FD9;&#x672C;&#x4E66;&#x88AB;&#x300A;&#x7F8E;&#x56FD;&#x79D1;&#x5B66;&#x5BB6;&#x300B;&#x6742;&#x5FD7;&#x5217;&#x4E3A;20&#x4E16;&#x7EAA;&#x6700;&#x91CD;&#x8981;&#x7684;12&#x672C;&#x7269;&#x7406;&#x79D1;&#x5B66;&#x7C7B;&#x4E13;&#x8457;&#x4E4B;&#x4E00;&#xFF0C;&#x4E0E;&#x300A;&#x76F8;&#x5BF9;&#x8BBA;&#x300B;&#x3001;&#x300A;&#x91CF;&#x5B50;&#x529B;&#x5B66;&#x300B;&#x7B49;&#x7ECF;&#x5178;&#x9F50;&#x540D;&#x3002;&#x53E6;&#x5916;Tex&#x6392;&#x7248;&#x7CFB;&#x7EDF;&#x4E5F;&#x662F;&#x4ED6;&#x641E;&#x51FA;&#x6765;&#x7684;&#x3002;&#x5927;&#x795E;&#x7684;&#x5176;&#x5B83;&#x8F89;&#x714C;&#x4E8B;&#x8FF9;&#x5C31;&#x4E0D;&#x6252;&#x4E86;&#xFF0C;&#x8BF4;&#x591A;&#x4E86;&#x81EA;&#x5351;&#x3002;</font><br><br>#### 2.4.1 KMP&#x6838;&#x5FC3;&#x601D;&#x60F3;&#x4E4B;&#x4E00;<br>&#x2003;&#x2003;&#x6211;&#x4EEC;&#x56DE;&#x8FC7;&#x5934;&#x53BB;&#x770B;&#x4E0A;&#x9762;&#x7684;&#x4F8B;&#x5B50;&#xFF0C;&#x7B2C;3&#x3001;4&#x6B65;&#x5BF9;&#x9996;&#x5B57;&#x7B26;&#x8FDB;&#x884C;&#x68C0;&#x6D4B;&#x65F6;&#x5C31;&#x53D1;&#x751F;&#x4E86;&#x5931;&#x914D;&#xFF08;&#x6211;&#x4EEC;&#x7B80;&#x79F0;&#x5339;&#x914D;&#x5931;&#x8D25;&#x4E3A;&#x5931;&#x914D;&#xFF0C;&#x4E0B;&#x540C;&#xFF09;&#x3002;&#x5982;&#x679C;&#x6709;&#x8FD9;&#x4E48;&#x4E00;&#x4F4D;&#x201C;&#x667A;&#x8005;&#x201D;&#xFF0C;&#x4ED6;&#x5728;&#x6211;&#x4EEC;&#x7B2C;2&#x6B65;&#x53D1;&#x751F;&#x5931;&#x914D;&#x7684;&#x65F6;&#x5019;&#x5C31;&#x544A;&#x8BC9;&#x6211;&#x4EEC;&#x7279;&#x5F81;&#x4E32;&#x5F80;&#x524D;&#x632A;&#x52A8;3&#x683C;&#xFF0C;&#x5373;&#x8DF3;&#x8FC7;&#x7B2C;3&#x3001;4&#x6B65;&#x76F4;&#x63A5;&#x8FDB;&#x5165;&#x7B2C;5&#x6B65;&#x7684;&#x5339;&#x914D;&#xFF0C;&#x90A3;&#x6211;&#x4EEC;&#x53EA;&#x9700;&#x8981;3&#x6B65;&#x64CD;&#x4F5C;&#x5C31;&#x80FD;&#x987A;&#x5229;&#x7684;&#x627E;&#x5230;&#x6211;&#x4EEC;&#x60F3;&#x8981;&#x7684;&#x5B57;&#x7B26;&#x4E32;&#xFF0C;&#x6548;&#x7387;&#x662F;&#x4E0D;&#x662F;&#x63D0;&#x9AD8;&#x4E86;&#x5F88;&#x591A;&#xFF1F;&#x63A8;&#x800C;&#x5E7F;&#x4E4B;&#xFF0C;&#x5982;&#x679C;&#x6211;&#x4EEC;&#x6BCF;&#x6B21;&#x5931;&#x914D;&#x7684;&#x65F6;&#x5019;&#x90FD;&#x53BB;&#x8BF7;&#x6559;&#x8FD9;&#x4F4D;&#x201C;&#x667A;&#x8005;&#x201D;&#xFF0C;&#x8BA9;&#x4ED6;&#x544A;&#x8BC9;&#x6211;&#x4EEC;&#x5E94;&#x8BE5;&#x5F80;&#x524D;&#x632A;&#x52A8;&#x51E0;&#x683C;&#xFF0C;&#x90A3;&#x4E48;&#x6211;&#x4EEC;&#x5F88;&#x5FEB;&#x5C31;&#x80FD;&#x5B8C;&#x6210;&#x6574;&#x4E2A;&#x76EE;&#x6807;&#x4E32;&#x7684;&#x68C0;&#x7D22;&#x3002;<br><br>&#x2003;&#x2003;&#x5728;KMP&#x7B97;&#x6CD5;&#x4E2D;&#xFF0C;&#x8FD9;&#x4F4D;&#x201C;&#x667A;&#x8005;&#x201D;&#x5C31;&#x662F;&#x54B1;&#x4EEC;&#x7684;Next&#x6570;&#x7EC4;&#xFF0C;&#x5B83;&#x8BE6;&#x7EC6;&#x7684;&#x8BB0;&#x8F7D;&#x4E86;&#x5F53;&#x6211;&#x4EEC;&#x5728;&#x67D0;&#x4E2A;&#x4F4D;&#x7F6E;&#x53D1;&#x751F;&#x5931;&#x914D;&#x65F6;&#xFF0C;&#x5E94;&#x8BE5;&#x5F80;&#x524D;&#x201C;&#x8DF3;&#x8DC3;&#x201D;&#x51E0;&#x6B65;&#x3002;<br><br>#### 2.4.2 KMP&#x6838;&#x5FC3;&#x601D;&#x60F3;&#x4E4B;&#x4E8C;<br>&#x2003;&#x2003;&#x518D;&#x6765;&#x770B;&#x7B2C;2&#x6B65;&#x5339;&#x914D;&#xFF0C;&#x8FD9;&#x4E00;&#x6B65;&#x662F;&#x6700;&#x6B87;&#x7684;&#x3002;&#x6211;&#x4EEC;&#x4ECE;&#x7D22;&#x5F15;&#x53F7;&#x4E3A;2&#x7684;&#x76EE;&#x6807;&#x5B57;&#x7B26;$t_2=a$&#x5F00;&#x59CB;&#xFF0C;&#x4E00;&#x8DEF;&#x7EFF;&#x706F;&#x901B;&#x98DA;&#xFF0C;&#x76F4;&#x5230;&#x6700;&#x540E;&#x4E00;&#x4E2A;&#x5B57;&#x7B26;&#x4E86;&#x624D;&#x53D1;&#x73B0;&#x4E0D;&#x5339;&#x914D;&#x3002;&#x8FD9;&#x4E00;&#x6B65;&#x6211;&#x4EEC;&#x4E00;&#x5171;&#x8FDB;&#x884C;&#x4E86;10&#x6B21;&#x5339;&#x914D;&#x64CD;&#x4F5C;&#x3002;&#x800C;&#x5728;&#x7B2C;5&#x6B65;&#x7684;&#x65F6;&#x5019;&#xFF0C;&#x6211;&#x4EEC;&#x8FD8;&#x5F97;&#x8001;&#x8001;&#x5B9E;&#x5B9E;&#x4ECE;&#x7D22;&#x5F15;&#x53F7;&#x4E3A;5&#x7684;&#x76EE;&#x6807;&#x5B57;&#x7B26;$t_5=a$&#xFF0C;&#x5339;&#x914D;&#x5230;&#x7D22;&#x5F15;&#x53F7;&#x4E3A;14&#x7684;&#x76EE;&#x6807;&#x5B57;&#x7B26;$t_{14}=b$&#x3002;&#x4E5F;&#x5C31;&#x662F;&#x8BF4;&#xFF0C;&#x7D22;&#x5F15;&#x53F7;5~10&#x7684;&#x603B;&#x5171;6&#x4E2A;&#x76EE;&#x6807;&#x5B57;&#x7B26;$t_5 \ t_6&#x2026;t_{10}=abcabc$&#xFF0C;&#x6BCF;&#x4E2A;&#x5B57;&#x7B26;&#x6211;&#x4EEC;&#x90FD;&#x53BB;&#x6267;&#x884C;&#x4E86;&#x4E24;&#x6B21;&#x5339;&#x914D;&#x64CD;&#x4F5C;&#xFF0C;&#x5982;&#x4E0B;&#x6240;&#x793A;&#xFF08;&#x4E3A;&#x4E86;&#x65B9;&#x4FBF;&#x89C2;&#x5BDF;&#xFF0C;&#x6211;&#x53EA;&#x5217;&#x51FA;&#x4E86;&#x8FD9;&#x4E9B;&#x5B57;&#x7B26;&#x7684;&#x7D22;&#x5F15;&#x53F7;&#xFF09;&#x3002;<br><br>| Index |  |  |  |  | 5 | 6 | 7 | 8 | 9 | 10 |  |  |  |  |  |<br>| :&#x2013;: | :&#x2013;: | :&#x2013;: | :&#x2013;: | :&#x2013;: | :&#x2013;: | :&#x2013;: | :&#x2013;: | :&#x2013;: | :&#x2013;: | :&#x2013;: | :&#x2013;: | :&#x2013;: | :&#x2013;: | :&#x2013;: | :&#x2013;: |<br>| Text | $a$ | $a$ | $b$ | $c$ | $a$ | $b$ | $c$ | $a$ | $b$ | $c$ | $a$ | $c$ | $a$ | $b$ | $c$ |<br>| Step2|  | $\color{green}{a}$ | $\color{green}{b}$ | $\color{green}{c}$ | $\color{green}{a}$ | $\color{green}{b}$ | $\color{green}{c}$ | $\color{green}{a}$ | $\color{green}{c}$ | $\color{green}{a}$ | $ \color{red}{b}$ |  |  |  |  |<br>| Step5|  |  |  |  | $\color{green}{a}$ | $\color{green}{b}$ | $\color{green}{c}$ | $\color{green}{a}$ | $\color{green}{b}$ | $\color{green}{c}$ | $\color{green}{a}$ | $\color{green}{c}$ | $\color{green}{a}$ | $ \color{green}{b}$ |  | |<br><br>&#x2003;&#x2003;&#x5982;&#x679C;&#x6211;&#x4EEC;&#x7684;&#x201C;&#x667A;&#x8005;&#x201D;&#x5728;&#x6211;&#x4EEC;&#x8FDB;&#x884C;&#x7B2C;5&#x6B65;&#x7684;&#x5339;&#x914D;&#x64CD;&#x4F5C;&#x65F6;&#x544A;&#x8BC9;&#x6211;&#x4EEC;&#xFF0C;&#x4F60;&#x76F4;&#x63A5;&#x4ECE;&#x76EE;&#x6807;&#x4E32;&#x7B2C;11&#x4E2A;&#x5B57;&#x7B26;$t_{11}=a$&#x5F00;&#x59CB;&#xFF0C;&#x524D;&#x9762;&#x7684;&#x4F60;&#x90FD;&#x752D;&#x7BA1;&#xFF0C;&#x90FD;&#x662F;&#x5339;&#x914D;&#x7684;&#x3002;&#x90A3;&#x4E48;&#x6211;&#x4EEC;&#x5728;&#x8FD9;&#x4E00;&#x6B65;&#x53EA;&#x9700;&#x8981;&#x5339;&#x914D;&#x5269;&#x4E0B;&#x7684;10 - 6 = 4&#x4E2A;&#x5B57;&#x7B26;&#x5373;&#x53EF;&#x3002;&#x8FD9;&#x6837;&#x662F;&#x4E0D;&#x662F;&#x53C8;&#x8FDB;&#x4E00;&#x6B65;&#x63D0;&#x9AD8;&#x4E86;&#x5339;&#x914D;&#x6548;&#x7387;&#xFF1F;<br><br>&#x2003;&#x2003;&#x5728;KMP&#x7B97;&#x6CD5;&#x4E2D;&#xFF0C;&#x8FD9;&#x4E2A;&#x4FE1;&#x606F;&#x540C;&#x6837;&#x662F;&#x5B58;&#x653E;&#x5728;&#x6211;&#x4EEC;&#x7684;Next&#x6570;&#x7EC4;&#x4E2D;&#x7684;&#x3002;&#x4E5F;&#x5C31;&#x662F;&#x8BF4;&#x8FD9;&#x4E2A;Next&#x6570;&#x7EC4;&#x5B83;&#x517C;&#x5177;&#x4E86;&#x4E24;&#x4E2A;&#x529F;&#x80FD;&#xFF1A;<br><br>- &#x6BCF;&#x4E00;&#x8F6E;&#x5339;&#x914D;&#x5931;&#x8D25;&#x540E;&#xFF0C;Next&#x6570;&#x7EC4;&#x4F1A;&#x544A;&#x8BC9;&#x4F60;&#x6CBF;&#x7740;&#x76EE;&#x6807;&#x4E32;&#xFF08;Text&#xFF09;&#x5F80;&#x524D;&#x8DF3;&#x8DC3;&#x51E0;&#x6B65;&#xFF0C;&#x4ECE;&#x6307;&#x5B9A;&#x4F4D;&#x7F6E;&#x5904;&#x5F00;&#x59CB;&#x65B0;&#x4E00;&#x8F6E;&#x7684;&#x5339;&#x914D;&#xFF1B;<div style="text-align:center;"><img src="/2018/04/23/&#x5B57;&#x7B26;&#x4E32;&#x5339;&#x914D;&#x7B97;&#x6CD5;&#x7CFB;&#x5217;&#x4E4B;&#x4E00;&#xFF1A;BF-KMP/KMP&#x76EE;&#x6807;&#x4E32;&#x4E0A;&#x4E2A;&#x8DF3;&#x8DC3;.png" width="450" height="200">&#x56FE;2-2&#x3000;&#x3000;KMP&#x7B97;&#x6CD5;&#x5728;&#x76EE;&#x6807;&#x4E32;&#x4E0A;&#x7684;&#x8DF3;&#x8DC3;&#x793A;&#x610F;&#x56FE;</div><br>- &#x5728;&#x65B0;&#x4E00;&#x8F6E;&#x7684;&#x5339;&#x914D;&#x64CD;&#x4F5C;&#x4E2D;&#xFF0C;Next&#x6570;&#x7EC4;&#x4F1A;&#x544A;&#x8BC9;&#x4F60;&#x5FFD;&#x7565;&#x7279;&#x5F81;&#x4E32;&#xFF08;Pattern&#xFF09;&#x5F00;&#x5934;&#x7684;&#x591A;&#x5C11;&#x4E2A;&#x5B57;&#x7B26;&#x4E0D;&#x7528;&#x505A;&#x5339;&#x914D;&#xFF0C;&#x4ECE;&#x6307;&#x5B9A;&#x4F4D;&#x7F6E;&#x5904;&#x5F00;&#x59CB;&#x9010;&#x4E2A;&#x6BD4;&#x5BF9;&#x76EE;&#x6807;&#x4E32;&#x5B57;&#x7B26;&#x548C;&#x7279;&#x5F81;&#x4E32;&#x5B57;&#x7B26;&#xFF1B;<div style="text-align:center;"><img src="/2018/04/23/&#x5B57;&#x7B26;&#x4E32;&#x5339;&#x914D;&#x7B97;&#x6CD5;&#x7CFB;&#x5217;&#x4E4B;&#x4E00;&#xFF1A;BF-KMP/KMP&#x7279;&#x5F81;&#x4E32;&#x4E0A;&#x8DF3;&#x8DC3;.png" width="450" height="200">&#x56FE;2-3&#x3000;&#x3000;KMP&#x7B97;&#x6CD5;&#x5728;&#x7279;&#x5F81;&#x4E32;&#x4E0A;&#x7684;&#x8DF3;&#x8DC3;&#x793A;&#x610F;&#x56FE;</div>
+
+<h4 id="2-4-3-Next&#x6570;&#x7EC4;&#x4E4B;&#x8C1C;"><a href="#2-4-3-Next&#x6570;&#x7EC4;&#x4E4B;&#x8C1C;" class="headerlink" title="2.4.3 Next&#x6570;&#x7EC4;&#x4E4B;&#x8C1C;"></a>2.4.3 Next&#x6570;&#x7EC4;&#x4E4B;&#x8C1C;</h4><p>&#x2003;&#x2003;KMP&#x7B97;&#x6CD5;&#x7684;&#x6838;&#x5FC3;&#x601D;&#x60F3;&#x5C31;&#x662F;&#x501F;&#x52A9;&#x4E00;&#x4E2A;&#x4E09;&#x65B9;&#x5DE5;&#x5177;&#xFF08;Next&#x6570;&#x7EC4;&#xFF0C;&#x5B58;&#x653E;&#x5728;&#x5185;&#x5B58;&#x4E2D;&#xFF09;&#x53BB;&#x8BB0;&#x5F55;&#x4E00;&#x4E9B;&#x5173;&#x952E;&#x6027;&#x7684;&#x4FE1;&#x606F;&#xFF0C;&#x5B9E;&#x73B0;&#x5339;&#x914D;&#x8FC7;&#x7A0B;&#x4E2D;&#x7684;&#x4E0D;&#x65AD;&#x8DF3;&#x8DC3;&#x524D;&#x8FDB;&#xFF0C;&#x4ECE;&#x800C;&#x6709;&#x6548;&#x7684;&#x51CF;&#x5C11;&#x5339;&#x914D;&#x6B21;&#x6570;&#x3002;&#x540E;&#x9762;&#x6211;&#x4EEC;&#x4F1A;&#x770B;&#x5230;&#x8FD8;&#x6709;&#x8BB8;&#x591A;&#x7B97;&#x6CD5;&#x90FD;&#x662F;&#x8FD9;&#x79CD;&#x5957;&#x8DEF;&#xFF0C;&#x53EA;&#x4E0D;&#x8FC7;&#x73A9;&#x6CD5;&#x4E0A;&#x6709;&#x6240;&#x5DEE;&#x5F02;&#x3002;&#x6BD4;&#x5982;&#x6709;&#x4E2A;&#x7B97;&#x6CD5;&#x89C9;&#x5F97;&#x8FD9;&#x4E9B;&#x5173;&#x952E;&#x4FE1;&#x606F;&#x653E;&#x5728;&#x5185;&#x5B58;&#x4E2D;&#x8FD8;&#x662F;&#x4E0D;&#x591F;&#x5FEB;&#xFF0C;&#x5B83;&#x5E72;&#x8106;&#x76F4;&#x63A5;&#x653E;&#x5230;&#x4E86;&#x5BC4;&#x5B58;&#x5668;&#x91CC;&#x9762;&#xFF0C;&#x4E5F;&#x662F;&#x4F1A;&#x73A9;&#x3002;<br>&#x2003;&#x2003;&#x53EA;&#x8981;&#x5145;&#x5206;&#x7406;&#x89E3;&#x4E86;&#x4E0A;&#x9762;&#x7684;&#x4E24;&#x70B9;&#x6838;&#x5FC3;&#x601D;&#x60F3;&#xFF0C;KMP&#x7B97;&#x6CD5;&#x54B1;&#x4E5F;&#x5C31;&#x638C;&#x63E1;&#x4E86;&#x4E00;&#x534A;&#x4E86;&#x3002;&#x7406;&#x89E3;&#x4E86;KMP&#x7B97;&#x6CD5;&#x7684;&#x601D;&#x60F3;&#x4E4B;&#x540E;&#xFF0C;&#x4E00;&#x4E9B;&#x7591;&#x95EE;&#x4E5F;&#x968F;&#x4E4B;&#x800C;&#x6765;&#xFF0C;&#x4E3B;&#x8981;&#x4F53;&#x73B0;&#x5728;&#x4EE5;&#x4E0B;&#x4E24;&#x70B9;&#xFF1A;</p>
+<ul>
+<li>Next&#x6570;&#x7EC4;&#x4E2D;&#x5B58;&#x653E;&#x7684;&#x4FE1;&#x606F;&#x4E3A;&#x4F55;&#x5C31;&#x80FD;&#x7CBE;&#x51C6;&#x3001;&#x9AD8;&#x6548;&#x7684;&#x5E2E;&#x6211;&#x4EEC;&#x5B9A;&#x4F4D;&#x5230;&#x4E0B;&#x4E00;&#x8F6E;&#x5339;&#x914D;&#x7684;&#x5F00;&#x59CB;&#x4F4D;&#x7F6E;&#xFF1F;</li>
+<li>Next&#x6570;&#x7EC4;&#x7684;&#x5927;&#x5C0F;&#x8DDF;&#x4EC0;&#x4E48;&#x6709;&#x5173;&#xFF0C;&#x662F;&#x53EA;&#x9700;&#x8981;&#x8BA1;&#x7B97;&#x4E00;&#x6B21;&#xFF0C;&#x8FD8;&#x662F;&#x9700;&#x8981;&#x5728;&#x5339;&#x914D;&#x8FC7;&#x7A0B;&#x4E2D;&#x53CD;&#x590D;&#x8BA1;&#x7B97;&#xFF1F;</li>
+<li>Next&#x6570;&#x7EC4;&#x91CC;&#x9762;&#x5B58;&#x653E;&#x7684;&#x503C;&#x53C8;&#x662F;&#x5982;&#x4F55;&#x8BA1;&#x7B97;&#x7684;&#xFF1F;</li>
+</ul>
+<p>&#x2003;&#x2003;&#x8FD9;&#x51E0;&#x4E2A;&#x95EE;&#x9898;&#x6211;&#x4EEC;&#x4E00;&#x4E2A;&#x4E2A;&#x6765;&#x89E3;&#x7B54;&#xFF0C;&#x9996;&#x5148;&#x6211;&#x4EEC;&#x6765;&#x770B;&#x770B;&#x662F;&#x5982;&#x4F55;&#x505A;&#x5230;&#x5B9A;&#x4F4D;&#x7684;&#x3002;</p>
+<h5 id="2-4-3-1-&#x5B9A;&#x4F4D;&#x4E4B;&#x8C1C;&#x4E00;"><a href="#2-4-3-1-&#x5B9A;&#x4F4D;&#x4E4B;&#x8C1C;&#x4E00;" class="headerlink" title="2.4.3.1 &#x5B9A;&#x4F4D;&#x4E4B;&#x8C1C;&#x4E00;"></a>2.4.3.1 &#x5B9A;&#x4F4D;&#x4E4B;&#x8C1C;&#x4E00;</h5><p>&#x2003;&#x2003;&#x5982;&#x4E0B;&#x56FE;&#x6240;&#x793A;&#xFF0C;&#x5047;&#x5B9A;&#x6211;&#x4EEC;&#x5728;&#x7B2C;$i$&#x8F6E;&#x5339;&#x914D;&#x65F6;&#xFF0C;&#x76EE;&#x6807;&#x4E32;&#x548C;&#x7279;&#x5F81;&#x4E32;&#x524D;&#x9762;&#x7684;$s - 1$&#x4E2A;&#x5B57;&#x7B26;&#x5DF2;&#x7ECF;&#x5339;&#x914D;&#xFF08;&#x56FE;&#x4E2D;&#x9EC4;&#x8272;&#x865A;&#x7EBF;&#x6846;&#x5185;&#x90E8;&#x5206;&#xFF09;&#xFF0C;&#x800C;&#x5728;&#x7B2C;$s$&#x4E2A;&#x5B57;&#x7B26;&#x5904;&#x53D1;&#x751F;&#x4E86;&#x5931;&#x914D;&#xFF08;&#x56FE;&#x4E2D;&#x7EA2;&#x8272;&#x4E0D;&#x7B49;&#x53F7;&#x5BF9;&#x5E94;&#x7684;&#x4E24;&#x4E2A;&#x65B9;&#x6846;&#xFF09;&#xFF0C;&#x6211;&#x4EEC;&#x9700;&#x8981;&#x786E;&#x5B9A;&#x5728;$i + 1$&#x8F6E;&#x5339;&#x914D;&#x65F6;&#xFF0C;&#x8DF3;&#x5230;&#x524D;&#x9762;&#x5DF2;&#x7ECF;&#x5339;&#x914D;&#x7684;$s - 1$&#x4E2A;&#x5B57;&#x7B26;&#x4E2D;&#x7684;&#x54EA;&#x4E00;&#x4E2A;&#x5F00;&#x59CB;&#x3002;</p>
+<div style="text-align:center;"><img src="/2018/04/23/&#x5B57;&#x7B26;&#x4E32;&#x5339;&#x914D;&#x7B97;&#x6CD5;&#x7CFB;&#x5217;&#x4E4B;&#x4E00;&#xFF1A;BF-KMP/&#x5B9A;&#x4F4D;&#x4E4B;&#x8C1C;1.png" width="500" height="200">&#x56FE;2-4&#x3000;&#x3000;KMP&#x7B97;&#x6CD5;&#x5728;&#x76EE;&#x6807;&#x4E32;&#x4E0A;&#x7684;&#x8DF3;&#x8DC3;&#x793A;&#x610F;&#x56FE;2</div><br>&#x2003;&#x2003;&#x5047;&#x5982;&#x7B2C;$i + 1$&#x8F6E;&#x5339;&#x914D;&#x65F6;&#xFF0C;&#x6211;&#x4EEC;&#x4ECE;&#x8FD9;&#x51E0;&#x4E2A;&#x5B57;&#x7B26;&#x4E2D;&#x7684;&#x67D0;&#x4E2A;&#x5B57;&#x7B26;&#x5904;&#x5F00;&#x59CB;&#xFF0C;&#x90A3;&#x5C31;&#x8981;&#x6C42;&#x4ECE;&#x8FD9;&#x4E2A;&#x5B57;&#x7B26;&#x5F00;&#x59CB;&#x7684;&#x524D;$c&#xFF08;1 \leq c \color{red}{&lt;} s - 2)$&#x4E2A;&#x76EE;&#x6807;&#x4E32;&#x5B57;&#x7B26;&#xFF08;&#x4E0A;&#x56FE;&#x53CA;&#x4E0B;&#x56FE;&#x4E2D;&#x6D45;&#x84DD;&#x8272;&#x82B1;&#x62EC;&#x53F7;&#x6240;&#x6307;&#x90E8;&#x5206;&#xFF09;&#x5FC5;&#x7136;&#x548C;&#x6211;&#x4EEC;&#x7279;&#x5F81;&#x4E32;&#x5F00;&#x59CB;&#x7684;$c$&#x4E2A;&#x5B57;&#x7B26;&#xFF08;&#x4E0A;&#x56FE;&#x53CA;&#x4E0B;&#x56FE;&#x4E2D;&#x6D45;&#x6A58;&#x8272;&#x82B1;&#x62EC;&#x53F7;&#x6240;&#x6307;&#x90E8;&#x5206;&#xFF09;&#x5339;&#x914D;&#xFF0C;&#x53EA;&#x6709;&#x8FD9;&#x6837;&#x4E2D;&#x95F4;&#x624D;&#x53EF;&#x80FD;&#x51FA;&#x73B0;&#x5B8C;&#x5168;&#x5339;&#x914D;&#x7684;&#x60C5;&#x51B5;&#x3002;<br><br>&#x2003;&#x2003;<font color="red" size="1.8">&#x5F53;$c = 0$&#x65F6;&#x8868;&#x793A;&#x53EF;&#x4EE5;&#x76F4;&#x63A5;&#x8DF3;&#x5230;&#x5931;&#x914D;&#x5904;&#x5F00;&#x59CB;&#x4E0B;&#x4E00;&#x8F6E;&#x5339;&#x914D;&#x4E86;&#xFF0C;&#x5148;&#x4E0D;&#x8003;&#x8651;&#x8FD9;&#x79CD;&#x60C5;&#x51B5;&#xFF0C;&#x6211;&#x4EEC;&#x4F1A;&#x5728;&#x540E;&#x9762;&#x8BA8;&#x8BBA;&#x3002;</font><br>&#x2003;&#x2003;<font color="red" size="1.8">&#x5F53;$c = s - 1$&#x65F6;&#xFF0C;&#x5373;&#x4E3A;&#x672C;&#x8F6E;&#x7684;&#x5339;&#x914D;&#x60C5;&#x51B5;&#xFF0C;&#x6240;&#x4EE5;$c$&#x6700;&#x5927;&#x53EA;&#x80FD;&#x53D6;&#x5230;$(s - 1) - 1 = s -2$&#x4E2A;&#x5B57;&#x7B26;&#x3002;</font><br>&#x2003;&#x2003;<font color="red" size="1.8">&#x5F53;$c = s - 2$&#x65F6;&#xFF0C;&#x53EF;&#x4EE5;&#x8BC1;&#x660E;&#x8FD9;&#x79CD;&#x60C5;&#x51B5;&#x5E76;&#x4E0D;&#x5B58;&#x5728;&#xFF0C;&#x8FD9;&#x4E5F;&#x662F;&#x4E3A;&#x4EC0;&#x4E48;&#x6211;&#x4EEC;&#x7684;$c$&#x53D6;&#x503C;&#x8303;&#x56F4;&#x7684;&#x53F3;&#x8FB9;&#x662F;&#x4E00;&#x4E2A;&#x5F00;&#x533A;&#x95F4;&#xFF0C;&#x8BE6;&#x7EC6;&#x8BC1;&#x660E;&#x6211;&#x4EEC;&#x540E;&#x9762;&#x7ED9;&#x51FA;&#xFF0C;&#x6240;&#x4EE5;&#x5B9E;&#x9645;&#x4E0A;&#x5BF9;&#x4E8E;$s  \geq 3$&#x7684;&#x60C5;&#x51B5;&#x6765;&#x8BF4;&#xFF0C;$c$&#x6700;&#x5927;&#x53EA;&#x80FD;&#x53D6;&#x5230;$(s - 1) - 1 - 1 = s -3$&#x4E2A;&#x5B57;&#x7B26;&#x3002;</font><br><br>&#x2003;&#x2003;&#x66F4;&#x8FDB;&#x4E00;&#x6B65;&#xFF0C;&#x5982;&#x679C;&#x8FD9;$c$&#x4E2A;&#x5B57;&#x7B26;&#x7684;&#x6700;&#x540E;&#x4E00;&#x4E2A;&#x5B57;&#x7B26;&#x4E0E;&#x5931;&#x914D;&#x5B57;&#x7B26;&#x4E4B;&#x95F4;&#x7684;&#x6240;&#x6709;&#x5B57;&#x7B26;&#xFF08;&#x4E0A;&#x56FE;&#x53CA;&#x4E0B;&#x56FE;&#x4E2D;&#x7EA2;&#x8272;&#x5916;&#x6846;&#x90E8;&#x5206;&#xFF09;&#x4E0D;&#x5339;&#x914D;&#x7684;&#x8BDD;&#xFF0C;&#x4E5F;&#x662F;&#x65E0;&#x6CD5;&#x4EA7;&#x751F;&#x4E00;&#x6B21;&#x5B8C;&#x5168;&#x5339;&#x914D;&#x7684;&#xFF0C;&#x5982;&#x4E0B;&#x56FE;&#x6240;&#x793A;&#xFF1A;<br><div style="text-align:center;"><img src="/2018/04/23/&#x5B57;&#x7B26;&#x4E32;&#x5339;&#x914D;&#x7B97;&#x6CD5;&#x7CFB;&#x5217;&#x4E4B;&#x4E00;&#xFF1A;BF-KMP/&#x5B9A;&#x4F4D;&#x4E4B;&#x8C1C;2.png" width="500" height="200">&#x56FE;2-5&#x3000;&#x3000;&#x7B2C;i + 1&#x8F6E;&#x5339;&#x914D;&#x5931;&#x8D25;&#x793A;&#x610F;&#x56FE;</div><br>&#x2003;&#x2003;&#x4E5F;&#x5C31;&#x662F;&#x8BF4;&#xFF0C;<font color="red">&#x76EE;&#x6807;&#x4E32;&#xFF08;&#x5FC5;&#x987B;&#xFF09;&#x4ECE;&#x5931;&#x914D;&#x5904;&#x7684;&#x524D;&#x4E00;&#x4E2A;&#x5B57;&#x7B26;&#x5F80;&#x524D;&#x5F00;&#x59CB;&#x8BA1;&#x7B97;&#xFF0C;&#x7279;&#x5F81;&#x4E32;&#x4ECE;&#x9996;&#x5B57;&#x7B26;&#x5F80;&#x540E;&#x5F00;&#x59CB;&#x8BA1;&#x7B97;</font>&#xFF0C;&#x5F53;&#x4E14;&#x4EC5;&#x5F53;&#x6709;&#x4E0D;&#x5C11;&#x4E8E;1&#x4E2A;&#x5B57;&#x7B26;&#x5339;&#x914D;&#x65F6;&#xFF08;<strong>&#x6211;&#x4EEC;&#x79F0;&#x4E4B;&#x4E3A;&#x9884;&#x5339;&#x914D;</strong><a name="prematch_tag"></a>&#xFF09;&#xFF0C;&#x624D;&#x6709;&#x53EF;&#x80FD;&#x4EA7;&#x751F;&#x4E00;&#x6B21;&#x5B8C;&#x5168;&#x5339;&#x914D;&#xFF0C;&#x6211;&#x4EEC;&#x624D;&#x9700;&#x8981;&#x505A;&#x4E00;&#x6B21;&#x5C1D;&#x8BD5;&#xFF0C;&#x5426;&#x5219;&#x76F4;&#x63A5;&#x8DF3;&#x5230;&#x76EE;&#x6807;&#x4E32;&#x5931;&#x914D;&#x7684;&#x5B57;&#x7B26;&#x5904;&#x5F00;&#x59CB;&#x4E0B;&#x4E00;&#x8F6E;&#x5339;&#x914D;&#x3002;&#x9884;&#x5339;&#x914D;&#x7684;&#x4E00;&#x4E2A;&#x5177;&#x4F53;&#x793A;&#x4F8B;&#x5982;&#x4E0B;&#xFF1A;<br><br><div style="text-align:center;"><img src="/2018/04/23/&#x5B57;&#x7B26;&#x4E32;&#x5339;&#x914D;&#x7B97;&#x6CD5;&#x7CFB;&#x5217;&#x4E4B;&#x4E00;&#xFF1A;BF-KMP/&#x9884;&#x5339;&#x914D;&#x793A;&#x610F;&#x56FE;1.png" width="500" height="200">&#x56FE;2-6&#x3000;&#x3000;&#x9884;&#x5339;&#x914D;&#x7684;&#x60C5;&#x51B5;&#x793A;&#x610F;&#x56FE;1</div><br>&#x2003;&#x2003;&#x5728;<a href="#provision">2.2&#x8282;</a>&#x4E2D;&#x6211;&#x4EEC;&#x7EA6;&#x5B9A;&#x5206;&#x522B;&#x7528;$r&#x3001;s$&#x8868;&#x793A;&#x5F53;&#x524D;&#x5339;&#x914D;&#x64CD;&#x4F5C;&#x65F6;&#xFF0C;&#x6307;&#x5411;&#x7684;&#x76EE;&#x6807;&#x4E32;&#x3001;&#x7279;&#x5F81;&#x4E32;&#xFF0C;&#x7531;&#x6B64;&#x53EF;&#x5F97;&#x9884;&#x5339;&#x914D;&#x7684;&#x6761;&#x4EF6;&#xFF08;$c \neq 0$&#xFF09;&#x4E3A;&#xFF1A;<br><br>$$<br>p_1&#x2026;p_c = t_{r - c}&#x2026;t_{r - 1}, \quad c \in [1, s - 2)<br>\tag{2 - 1}<br>$$<br><br>&#x2003;&#x2003;&#x6587;&#x5B57;&#x8BF4;&#x8D77;&#x6765;&#x53EF;&#x80FD;&#x6709;&#x70B9;&#x7ED5;&#xFF0C;&#x6211;&#x4EEC;&#x76F4;&#x63A5;&#x4E0A;&#x56FE;&#xFF1A;<br><div style="text-align:center;"><img src="/2018/04/23/&#x5B57;&#x7B26;&#x4E32;&#x5339;&#x914D;&#x7B97;&#x6CD5;&#x7CFB;&#x5217;&#x4E4B;&#x4E00;&#xFF1A;BF-KMP/&#x5B9A;&#x4F4D;&#x4E4B;&#x8C1C;3.png" width="500" height="200">&#x56FE;2-7&#x3000;&#x3000;&#x9884;&#x5339;&#x914D;&#x7684;&#x60C5;&#x51B5;&#x793A;&#x610F;&#x56FE;2</div><br>&#x2003;&#x2003;&#x56FE;&#x4E2D;&#x9EC4;&#x8272;&#x865A;&#x7EBF;&#x5185;&#x7684;&#x90E8;&#x5206;&#xFF08;&#x6709;&#x9EC4;&#x8272;&#x7B49;&#x53F7;&#x90E8;&#x5206;&#xFF09;&#x5373;&#x4E3A;&#x6211;&#x4EEC;&#x4E0A;&#x4E00;&#x6B21;&#x5DF2;&#x7ECF;&#x5339;&#x914D;&#x4E86;&#x7684;&#x5B57;&#x7B26;&#xFF0C;&#x7EA2;&#x8272;&#x4E0D;&#x7B49;&#x53F7;&#x5904;&#x5B57;&#x7B26;&#x5373;&#x4E3A;&#x4E0A;&#x4E00;&#x6B21;&#x5931;&#x914D;&#x7684;&#x4F4D;&#x7F6E;&#x3002;&#x56FE;&#x4E2D;&#x540C;&#x4E00;&#x79CD;&#x989C;&#x8272;&#x7684;&#x865A;&#x7EBF;&#x7BAD;&#x5934;&#x6240;&#x5305;&#x542B;&#x7684;&#x5B57;&#x7B26;&#x5373;&#x8868;&#x793A;&#x5E94;&#x8BE5;&#x9884;&#x5339;&#x914D;&#x7684;&#x90E8;&#x5206;&#x3002;<br>&#x2003;&#x2003;$Min = 1$&#x8868;&#x793A;&#x9884;&#x5339;&#x914D;&#x6700;&#x5C11;&#x5E94;&#x4FDD;&#x8BC1;&#x6709;&#x4E00;&#x4E2A;&#x76EE;&#x6807;&#x4E32;&#x5B57;&#x7B26;&#x548C;&#x7279;&#x5F81;&#x4E32;&#x5B57;&#x7B26;&#x5339;&#x914D;&#xFF0C;&#x8FD9;&#x79CD;&#x60C5;&#x51B5;&#x4E0B;&#xFF0C;&#x7279;&#x5F81;&#x4E32;&#x5C31;&#x8DF3;&#x5230;&#x5931;&#x914D;&#x5B57;&#x7B26;&#x7684;&#x524D;&#x4E00;&#x4E2A;&#x5B57;&#x7B26;&#x5904;&#xFF0C;&#x5F00;&#x59CB;&#x4E0B;&#x4E00;&#x8F6E;&#x5339;&#x914D;&#x3002;$Max= s - 3$&#x8868;&#x793A;&#x9884;&#x5339;&#x914D;&#x6700;&#x591A;&#x53EF;&#x4EE5;&#x6709;$s - 3$&#x4E2A;&#x76EE;&#x6807;&#x4E32;&#x5B57;&#x7B26;&#x548C;&#x7279;&#x5F81;&#x4E32;&#x5B57;&#x7B26;&#x5339;&#x914D;&#x3002;<br>&#x2003;&#x2003;&#x66F4;&#x4E00;&#x822C;&#x7684;&#xFF0C;&#x6211;&#x4EEC;&#x6709;&#x4E0B;&#x9762;&#x8FD9;&#x5F20;&#x9884;&#x5339;&#x914D;&#x793A;&#x610F;&#x56FE;&#xFF1A;<br><br><div style="text-align:center;"><img src="/2018/04/23/&#x5B57;&#x7B26;&#x4E32;&#x5339;&#x914D;&#x7B97;&#x6CD5;&#x7CFB;&#x5217;&#x4E4B;&#x4E00;&#xFF1A;BF-KMP/&#x5B9A;&#x4F4D;&#x4E4B;&#x8C1C;4.png" width="500" height="200">&#x56FE;2-8&#x3000;&#x3000;&#x9884;&#x5339;&#x914D;&#x7684;&#x60C5;&#x51B5;&#x793A;&#x610F;&#x56FE;2</div><br>&#x2003;&#x2003;&#x56FE;&#x4E2D;&#x865A;&#x7EBF;&#x7BAD;&#x5934;&#x6240;&#x6307;&#x90E8;&#x5206;&#x5373;&#x4E3A;&#x9884;&#x5339;&#x914D;&#x5B57;&#x7B26;&#x3002;<strong>&#x5BF9;&#x4E8E;&#x9884;&#x5339;&#x914D;&#x5B57;&#x7B26;&#xFF0C;&#x76EE;&#x6807;&#x4E32;&#x4E0A;&#x7684;&#x90E8;&#x5206;&#x6211;&#x4EEC;&#x7ED9;&#x5B83;&#x53D6;&#x4E2A;&#x540D;&#x5B57;&#x53EB;&#x540E;&#x7F00;&#xFF0C;&#x7279;&#x5F81;&#x4E32;&#x4E0A;&#x7684;&#x90E8;&#x5206;&#x6211;&#x4EEC;&#x5219;&#x79F0;&#x4F5C;&#x524D;&#x7F00;</strong>&#xFF08;&#x4E0A;&#x56FE;&#x5DF2;&#x6807;&#x6CE8;&#xFF09;&#x3002;&#x7531;&#x6B64;&#xFF0C;&#x9884;&#x5339;&#x914D;&#x7684;&#x6761;&#x4EF6;&#x6211;&#x4EEC;&#x4E5F;&#x53EF;&#x4EE5;&#x8868;&#x8FBE;&#x4E3A;$suffix = prefix$&#x3002;<br>&#x2003;&#x2003;&#x7531;&#x6B64;&#x53EF;&#x4EE5;&#x770B;&#x51FA;&#xFF0C;&#x53EA;&#x8981;&#x6211;&#x4EEC;&#x4FDD;&#x5B58;&#x5931;&#x914D;&#x5904;&#x524D;&#x9762;&#x7684;&#x524D;&#x7F00;/&#x540E;&#x7F00;&#x7684;&#x5927;&#x5C0F;&#xFF08;&#x957F;&#x5EA6;&#xFF09;&#xFF0C;&#x6211;&#x4EEC;&#x5C31;&#x80FD;&#x5728;&#x4E0B;&#x4E00;&#x8F6E;&#x5339;&#x914D;&#x65F6;&#x51C6;&#x786E;&#x5B9A;&#x4F4D;&#x5230;&#x5339;&#x914D;&#x5F00;&#x59CB;&#x7684;&#x4F4D;&#x7F6E;&#x3002;&#x800C;Next&#x6570;&#x7EC4;&#x6B63;&#x662F;&#x56E0;&#x4E3A;&#x4FDD;&#x5B58;&#x4E86;&#x8FD9;&#x4E2A;&#x5173;&#x952E;&#x4FE1;&#x606F;&#xFF0C;&#x6240;&#x4EE5;&#x80FD;&#x5B9E;&#x73B0;&#x76EE;&#x6807;&#x4E32;&#x4E0A;&#x7684;&#x5B9A;&#x4F4D;&#xFF01;<br><br>##### 2.4.3.2 &#x5173;&#x4E8E;&#x524D;&#x540E;&#x7F00;<br>&#x2003;&#x2003;<font color="grey" size="1.8">&#x5728;&#x8BB2;&#x524D;&#x540E;&#x7F00;&#x4E4B;&#x524D;&#xFF0C;&#x9700;&#x8981;&#x505A;&#x4E00;&#x4E9B;&#x989D;&#x5916;&#x7684;&#x8865;&#x5145;&#x8BF4;&#x660E;&#x3002;&#x56E0;&#x4E3A;&#x6709;&#x4E9B;&#x540C;&#x5B66;&#x5728;&#x8BFB;&#x8FD9;&#x7BC7;&#x6587;&#x7AE0;&#x4E4B;&#x524D;&#x5DF2;&#x7ECF;&#x53C2;&#x8003;&#x4E86;&#x5927;&#x91CF;&#x7F51;&#x7EDC;&#x4E0A;&#x7684;&#x5173;&#x4E8E;KMP&#x7B97;&#x6CD5;&#x7684;&#x8D44;&#x6599;&#xFF0C;&#x800C;&#x672C;&#x6587;&#x63D0;&#x5230;&#x7684;&#x524D;&#x540E;&#x7F00;&#x548C;&#x7F51;&#x4E0A;&#x67D0;&#x4E9B;&#x8D44;&#x6599;&#x7684;&#x524D;&#x540E;&#x7F00;&#x6982;&#x5FF5;&#x4E0A;&#x6709;&#x6240;&#x4E0D;&#x540C;&#xFF0C;&#x5BB9;&#x6613;&#x5F15;&#x8D77;&#x56F0;&#x60D1;&#x3002;&#x5B8C;&#x5168;&#x6CA1;&#x6709;&#x63A5;&#x89E6;&#x8FC7;&#x8FD9;&#x65B9;&#x9762;&#x8D44;&#x6599;&#x7684;&#x540C;&#x5B66;&#x53CD;&#x800C;&#x4E0D;&#x4F1A;&#x53D7;&#x5F71;&#x54CD;&#xFF0C;&#x53EF;&#x4EE5;&#x76F4;&#x63A5;&#x8DF3;&#x8FC7;&#x8FD9;&#x90E8;&#x5206;&#x3002;</font><br><br>&#x2003;&#x2003;<font color="grey" size="1.8">&#x4E4B;&#x6240;&#x4EE5;&#x8981;&#x4E0E;&#x7F51;&#x7EDC;&#x4E0A;&#x7684;&#x6982;&#x5FF5;&#x533A;&#x5206;&#x5F00;&#x6765;&#xFF0C;&#x5E76;&#x4E0D;&#x662F;&#x6211;&#x60F3;&#x6807;&#x65B0;&#x7ACB;&#x5F02;&#xFF0C;&#x800C;&#x662F;&#x4E3A;&#x4E86;&#x4FDD;&#x6301;&#x4E0E;Paper&#x7684;&#x9AD8;&#x5EA6;&#x4E00;&#x81F4;&#xFF0C;&#x5C3D;&#x91CF;&#x8FD8;&#x539F;&#x4F5C;&#x8005;&#x7684;&#x60F3;&#x6CD5;&#x3002;&#x6211;&#x4EEC;&#x5C31;&#x8FD9;&#x4E24;&#x79CD;&#x524D;&#x540E;&#x7F00;&#x505A;&#x4E00;&#x4E2A;&#x533A;&#x5206;&#xFF0C;&#x4E3A;&#x65B9;&#x4FBF;&#x53D9;&#x8FF0;&#x59D1;&#x4E14;&#x79F0;&#x4E3A;&#x7F51;&#x7EDC;&#x7248;&#x548C;Paper&#x7248;&#xFF08;<strong>&#x5F53;&#x7136;Paper&#x4E2D;&#x5E76;&#x6CA1;&#x6709;&#x4F7F;&#x7528;&#x524D;/&#x540E;&#x7F00;&#x8FD9;&#x6837;&#x7684;&#x672F;&#x8BED;&#xFF0C;&#x800C;&#x662F;&#x6211;&#x4E3A;&#x4E86;&#x65B9;&#x4FBF;&#x5927;&#x5BB6;&#x7406;&#x89E3;&#x63D0;&#x51FA;&#x6765;&#x7684;&#xFF0C;&#x8BF7;&#x52A1;&#x5FC5;&#x77E5;&#x6653;</strong>&#xFF09;&#x3002;</font><br><br>&#x2003;&#x2003;<font color="grey" size="1.8">&#x76F8;&#x540C;&#x70B9;&#xFF1A;&#x4E24;&#x4E2A;&#x7248;&#x672C;&#x7684;&#x524D;&#x540E;&#x7F00;&#x76F8;&#x540C;&#x70B9;&#x5C31;&#x662F;&#xFF0C;&#x90FD;&#x662F;&#x7ED9;&#x5B9A;&#x5B57;&#x7B26;&#x4E32;&#x7684;&#x771F;&#x5B50;&#x96C6;&#xFF08;&#x8FDE;&#x7EED;&#x5B57;&#x7B26;&#xFF09;&#x3002;&#x4E3E;&#x4F8B;&#x6765;&#x8BF4;&#xFF0C;&#x6709;&#x5B57;&#x7B26;&#x4E32;&#x201C;ABACD&#x201D;&#xFF0C;&#x5176;&#x524D;&#x7F00;&#x6709;&#x201C;A&#x3001;AB&#x3001;ABA&#x3001;ABAC&#x201D;&#xFF0C;&#x540E;&#x7F00;&#x6709;&#x201C;D&#x3001;CD&#x3001;ACD&#x3001;BACD&#x201D;&#x3002;&#x518D;&#x6709;&#xFF0C;&#x5BF9;&#x4E8E;&#x5355;&#x5B57;&#x7B26;&#x7684;&#x5B57;&#x7B26;&#x4E32;&#x201C;A&#x201D;&#x6765;&#x8BF4;&#xFF0C;&#x5176;&#x524D;&#x3001;&#x540E;&#x7F00;&#x5747;&#x4E3A;&#x7A7A;&#x3002;</font><br><br>&#x2003;&#x2003;<font color="grey" size="1.8">&#x4E0D;&#x540C;&#x70B9;&#xFF1A;&#x5BF9;&#x4E8E;&#x7F51;&#x7EDC;&#x7248;&#xFF0C;&#x5176;&#x524D;&#x540E;&#x7F00;&#x662F;&#x628A;&#x5305;&#x62EC;&#x5931;&#x914D;&#x5B57;&#x7B26;&#x5728;&#x5185;&#x7684;&#x6240;&#x6709;&#x5B57;&#x7B26;&#x4F5C;&#x4E3A;&#x5168;&#x96C6;&#xFF0C;&#x7136;&#x540E;&#x4EA7;&#x751F;&#x7684;&#x771F;&#x5B50;&#x96C6;&#x4F5C;&#x4E3A;&#x524D;&#x540E;&#x7F00;&#x3002;&#x4EE5;&#x4E0A;&#x9762;&#x7684;&#x4F8B;&#x5B50;&#x6765;&#x8BF4;&#xFF0C;&#x5B57;&#x7B26;&#x4E32;&#x201C;ABACD&#x201D;&#x5728;&#x5B57;&#x7B26;&#x201C;D&#x201D;&#x5904;&#x5931;&#x914D;&#xFF0C;&#x90A3;&#x4E48;&#x5176;&#x524D;&#x7F00;&#x6709;&#x201C;A&#x3001;AB&#x3001;ABA&#x3001;ABAC&#x201D;&#xFF0C;&#x540E;&#x7F00;&#x6709;&#x201C;D&#x3001;CD&#x3001;ACD&#x3001;BACD&#x201D;&#x3002;Paper&#x7248;&#x7684;&#x524D;&#x540E;&#x7F00;&#xFF0C;&#x5219;&#x628A;&#x5931;&#x914D;&#x5B57;&#x7B26;&#x4E4B;&#x524D;&#x7684;&#x6240;&#x6709;&#x5B57;&#x7B26;&#x4F5C;&#x4E3A;&#x5168;&#x96C6;&#xFF0C;&#x7136;&#x540E;&#x4EA7;&#x751F;&#x7684;&#x771F;&#x5B50;&#x96C6;&#x4F5C;&#x4E3A;&#x524D;&#x540E;&#x7F00;&#xFF0C;&#x5728;&#x8FD9;&#x4E2A;&#x4F8B;&#x5B50;&#x4E2D;Paper&#x7248;&#x7684;&#x524D;&#x7F00;&#x5219;&#x53EA;&#x6709;&#x201C;A&#x3001;AB&#x3001;ABA&#x201D;&#xFF0C;&#x540E;&#x7F00;&#x5219;&#x53EA;&#x6709;&#x201C;C&#x3001;AC&#x3001;BAC&#x201D;&#x3002;</font><br><br>&#x2003;&#x2003;<font color="grey" size="1.8"><strong>&#x4E5F;&#x5C31;&#x662F;&#x8BF4;&#xFF0C;&#x4ECE;&#x7B2C;&#x4E00;&#x4E2A;&#x5B57;&#x7B26;&#x5F00;&#x59CB;&#x8BA1;&#x7B97;&#xFF0C;&#x5305;&#x62EC;&#x5931;&#x914D;&#x5B57;&#x7B26;&#x5728;&#x5185;&#x5047;&#x5B9A;&#x4E00;&#x5171;&#x6709;$s$&#x4E2A;&#x5B57;&#x7B26;&#xFF0C;&#x90A3;&#x4E48;&#x7F51;&#x7EDC;&#x7248;&#x7684;&#x524D;/&#x540E;&#x7F00;&#x6700;&#x5927;&#x53EF;&#x4EE5;&#x53D6;$s - 1$&#xFF0C;&#x800C;Paper&#x7248;&#x7684;&#x5219;&#x53EA;&#x80FD;&#x53D6;$s - 2$&#xFF08;&#x5B9E;&#x9645;&#x4E0A;&#x53EA;&#x80FD;&#x53D6;&#x5230;$s - 3$&#xFF0C;&#x539F;&#x56E0;&#x6211;&#x4EEC;&#x9A6C;&#x4E0A;&#x4F1A;&#x8BB2;&#xFF09;&#x3002;</strong></font><br><br>&#x2003;&#x2003;&#x63A5;&#x4E0A;&#x6587;&#xFF0C;&#x8BB0;&#x524D;&#x7F00;/&#x540E;&#x7F00;&#x7684;&#x957F;&#x5EA6;&#x4E3A;$c(c\  = \ surffix.length \ = \ prefix.length)$&#xFF0C;&#x7B2C;$i$&#x8F6E;&#x5339;&#x914D;&#x65F6;&#x76EE;&#x6807;&#x4E32;&#x3001;&#x7279;&#x5F81;&#x4E32;&#x5DF2;&#x7ECF;&#x5339;&#x914D;&#x7684;&#x5B57;&#x7B26;&#x6570;&#x4E3A;$s - 1$&#xFF0C;&#x5219;&#x53EF;&#x4EE5;&#x63A8;&#x5BFC;&#x51FA;$c$&#x7684;&#x53D6;&#x503C;&#x6709;&#x5982;&#x4E0B;&#x51E0;&#x79CD;&#x60C5;&#x51B5;&#xFF1A;<br>- &#x5982;&#x4E0B;&#x8868;&#x6240;&#x793A;&#xFF0C;&#x8FD9;&#x79CD;&#x60C5;&#x51B5;&#x4E0B;&#x6709;$c = 0$&#xFF0C;&#x5DF2;&#x5339;&#x914D;&#x7684;&#x5B57;&#x7B26;&#x4E2D;&#x6CA1;&#x6709;&#x9884;&#x5339;&#x914D;&#x53D1;&#x751F;&#xFF0C;&#x7B2C;$i + 1$&#x8F6E;&#x5339;&#x914D;&#x5E94;&#x4ECE;&#x5931;&#x914D;&#x5904;&#x5F00;&#x59CB;&#xFF0C;&#x5373;&#x5728;&#x76EE;&#x6807;&#x4E32;&#x4E0A;&#x79FB;&#x52A8;&#x8DDD;&#x79BB;&#x4E3A;$(s - 1) - c = 9 - 1 = 8$&#xFF08;&#x4E2A;&#x5B57;&#x7B26;&#xFF09;&#x3002;<br><br>| index| 1| 2| 3| 4| 5| 6| 7| 8| 9| 10| 11| 12| 13|<br>| :&#x2013;: | :&#x2013;: | :&#x2013;: | :&#x2013;: | :&#x2013;: | :&#x2013;: | :&#x2013;: | :&#x2013;: | :&#x2013;: | :&#x2013;: | :&#x2013;: | :&#x2013;: | :&#x2013;: | :&#x2013;: |<br>| Text | $a$ | $a$ | $b$ | $c$ | $a$ | $a$ | $c$ | $a$ | $c$ | $c$ | $a$ | $c$ | $a$ |<br>| i&#x2019;th iter|  | $\color{green}{a}$ | $\color{green}{b}$ | $\color{green}{c}$ | $\color{green}{a}$ | $\color{green}{a}$ | $\color{green}{c}$ | $\color{green}{a}$ | $\color{green}{c}$ | $\color{red}{b}$ |  |  |  |  |<br>| (i+1)&#x2019;th iter|  |  |  |  |  |  |  |  |  |$\color{red}{a}$ | $b$ | $c$ | $&#x2026;$ |<br><br>&#x2003;&#x2003;&#x4E3A;&#x4E86;&#x65B9;&#x4FBF;&#x5927;&#x5BB6;&#x9605;&#x8BFB;&#xFF0C;&#x8FD9;&#x91CC;&#x7ED9;&#x51FA;&#x6240;&#x6709;&#x7684;&#x5019;&#x9009;&#x524D;&#x540E;&#x7F00;&#x53CA;&#x5339;&#x914D;&#x60C5;&#x51B5;&#x3002;<br><font color="red" size="2.4">&#x5DF2;&#x5339;&#x914D;&#x5B57;&#x7B26;&#x4E32;&#xFF1A;abcaacac      &#x5931;&#x914D;&#x7279;&#x5F81;&#x4E32;&#x7D22;&#x5F15;&#x53F7;s: 9    &#x5DF2;&#x5339;&#x914D;&#x957F;&#x5EA6;s-1: 8 </font><br><br>| &#x5019;&#x9009;&#x524D;/&#x540E;&#x7F00;&#x5927;&#x5C0F; | &#x5019;&#x9009;&#x524D;&#x7F00; | &#x5019;&#x9009;&#x540E;&#x7F00; | &#x662F;&#x5426;&#x5339;&#x914D; |<br>| :&#x2013;: | :&#x2013;: | :&#x2013;: | :&#x2013;: |<br>| 1 | a | c | &#x5426; |<br>| 2 | ab | ac | &#x5426; |<br>| 3 | abc | cac | &#x5426; |<br>| 4 | abca | acac | &#x5426; |<br>| 5 | abcaa | aacac | &#x5426; |<br>| 6 | abcaac | caacac | &#x5426; |<br>| 7 | abcaaca | bcaacac | &#x5426; |<br><br>&#x2003;&#x2003;&#x56E0;&#x4E3A;&#x6CA1;&#x6709;&#x4EA7;&#x751F;&#x9884;&#x5339;&#x914D;&#xFF08;&#x76F8;&#x540C;&#x7684;&#x5019;&#x9009;&#x524D;&#x540E;&#x7F00;&#xFF09;&#xFF0C;&#x56E0;&#x6B64;$c = 0$&#xFF0C;&#x7D22;&#x5F15;&#x53F7;&#x4E3A;5&#x3001;6&#x3001;8&#x5904;&#x7684;&#x540E;&#x7F00;&#x867D;&#x7136;&#x5339;&#x914D;&#x4E86;&#x7279;&#x5F81;&#x4E32;&#x9996;&#x5B57;&#x7B26;&#xFF0C;&#x4F46;&#x4ED6;&#x4EEC;&#x5747;&#x4E0D;&#x6EE1;&#x8DB3;<strong><a href="#prematch_tag">&#x9884;&#x5339;&#x914D;</a></strong>&#x7684;&#x5B9A;&#x4E49;&#xFF0C;&#x56E0;&#x6B64;&#x4E0D;&#x53EF;&#x80FD;&#x5B58;&#x5728;&#x5168;&#x5339;&#x914D;&#x7684;&#x60C5;&#x51B5;&#x3002;<br><br>- &#x7B2C;&#x4E8C;&#x79CD;<a name="second_condition_tag"></a>&#x5982;&#x4E0B;&#x8868;&#x6240;&#x793A;&#xFF0C;&#x8FD9;&#x79CD;&#x60C5;&#x51B5;&#x4E0B;$c = 1$&#xFF0C;&#x7B2C;$i + 1$&#x8F6E;&#x5339;&#x914D;&#x65F6;&#xFF0C;&#x5219;&#x4ECE;&#x5931;&#x914D;&#x5904;&#x7684;&#x524D;&#x4E00;&#x4E2A;&#x5B57;&#x7B26;&#x5F00;&#x59CB;&#xFF0C;&#x4E0B;&#x4E00;&#x8F6E;&#x5339;&#x914D;&#x65F6;&#x5728;&#x76EE;&#x6807;&#x4E32;&#x4E0A;&#x79FB;&#x52A8;&#x7684;&#x8DDD;&#x79BB;&#x662F;$(s - 1) - c = 9 - 2 = 7$&#xFF08;&#x4E2A;&#x5B57;&#x7B26;&#xFF09;&#x3002;<br><br>| index| 1| 2| 3| 4| 5| 6| 7| 8| 9| 10| 11| 12| 13|<br>| :&#x2013;: | :&#x2013;: | :&#x2013;: | :&#x2013;: | :&#x2013;: | :&#x2013;: | :&#x2013;: | :&#x2013;: | :&#x2013;: | :&#x2013;: | :&#x2013;: | :&#x2013;: | :&#x2013;: | :&#x2013;: |<br>| Text | $a$ | $a$ | $b$ | $c$ | $c$ | $b$ | $c$ | $b$ | $a$ | $c$ | $a$ | $c$ | $a$ |<br>| i&#x2019;th iter|  | $\color{green}{a}$ | $\color{green}{b}$ | $\color{green}{c}$ | $\color{green}{c}$ | $\color{green}{b}$ | $\color{green}{c}$ | $\color{green}{b}$ | $\color{green}{a}$ | $\color{red}{b}$ |  |  |  |  |<br>| (i+1)&#x2019;th iter|  |  |  |  |  |  |  |  |$\color{green}{a}$ | $\color{red}{b}$ | $c$ | $c$ | $&#x2026;$ |<br><br>&#x2003;&#x2003;&#x6240;&#x6709;&#x7684;&#x5019;&#x9009;&#x524D;&#x540E;&#x7F00;&#x53CA;&#x5339;&#x914D;&#x60C5;&#x51B5;&#x5982;&#x4E0B;&#x8868;&#x6240;&#x793A;&#x3002;<br><font color="red" size="2.4">&#x5DF2;&#x5339;&#x914D;&#x5B57;&#x7B26;&#x4E32;&#xFF1A;abccbcba      &#x5931;&#x914D;&#x7279;&#x5F81;&#x4E32;&#x7D22;&#x5F15;&#x53F7;s: 9    &#x5DF2;&#x5339;&#x914D;&#x957F;&#x5EA6;s-1: 8</font><br><br>| &#x5019;&#x9009;&#x524D;/&#x540E;&#x7F00;&#x5927;&#x5C0F; | &#x5019;&#x9009;&#x524D;&#x7F00; | &#x5019;&#x9009;&#x540E;&#x7F00; | &#x662F;&#x5426;&#x5339;&#x914D; |<br>| :&#x2013;: | :&#x2013;: | :&#x2013;: | :&#x2013;: |<br>| 1 | a | a | $\color{green}{&#x662F;}$ |<br>| 2 | ab | ba | &#x5426; |<br>| 3 | abc | cba | &#x5426; |<br>| 4 | abcc | bcba | &#x5426; |<br>| 5 | abccb | cbcba | &#x5426; |<br>| 6 | abccbc | ccbcba | &#x5426; |<br>| 7 | abccbcb | bccbcba | &#x5426; |<br><br><br>- &#x7B2C;&#x4E09;&#x79CD;&#x60C5;&#x51B5;&#x5982;&#x4E0B;&#x8868;&#x6240;&#x793A;&#xFF0C;&#x8FD9;&#x79CD;&#x60C5;&#x51B5;&#x4E0B;$1 &lt; c &lt; s - 1$&#xFF0C;&#x7B2C;$i + 1$&#x8F6E;&#x5339;&#x914D;&#x65F6;&#xFF0C;&#x5219;&#x4ECE;&#x4E2D;&#x95F4;&#x7684;&#x67D0;&#x4E00;&#x4E2A;&#x5B57;&#x7B26;&#x5F00;&#x59CB;&#xFF0C;&#x4E0B;&#x4E00;&#x8F6E;&#x5339;&#x914D;&#x65F6;&#x5728;&#x76EE;&#x6807;&#x4E32;&#x4E0A;&#x7684;&#x79FB;&#x52A8;&#x8DDD;&#x79BB;&#x4E3A;$(s - 1) - c = 9 - 1 - 3 = 5$&#xFF08;&#x4E2A;&#x5B57;&#x7B26;&#xFF09;&#x3002;<br><br>| index| 1| 2| 3| 4| 5| 6| 7| 8| 9| 10| 11| 12| 13|<br>| :&#x2013;: | :&#x2013;: | :&#x2013;: | :&#x2013;: | :&#x2013;: | :&#x2013;: | :&#x2013;: | :&#x2013;: | :&#x2013;: | :&#x2013;: | :&#x2013;: | :&#x2013;: | :&#x2013;: | :&#x2013;: |<br>| Text | $a$ | $a$ | $b$ | $c$ | $c$ | $b$ | $a$ | $b$ | $c$ | $c$ | $a$ | $c$ | $a$ |<br>| i&#x2019;th iter|  | $\color{green}{a}$ | $\color{green}{b}$ | $\color{green}{c}$ | $\color{green}{c}$ | $\color{green}{b}$ | $\color{green}{a}$ | $\color{green}{b}$ | $\color{green}{c}$ | $\color{red}{b}$ |  |  |  |  |<br>| (i+1)&#x2019;th iter|  |  |  |  |  |  |$\color{green}{a}$ | $\color{green}{b}$ | $\color{green}{c}$ | $\color{green}{c}$ | $\color{red}{b}$ | $a$ | $&#x2026;$ |<br><br>&#x2003;&#x2003;&#x6240;&#x6709;&#x7684;&#x5019;&#x9009;&#x524D;&#x540E;&#x7F00;&#x53CA;&#x5339;&#x914D;&#x60C5;&#x51B5;&#x5982;&#x4E0B;&#x8868;&#x6240;&#x793A;&#x3002;<br><font color="red" size="2.4">&#x5DF2;&#x5339;&#x914D;&#x5B57;&#x7B26;&#x4E32;&#xFF1A;abccbabc      &#x5931;&#x914D;&#x7279;&#x5F81;&#x4E32;&#x7D22;&#x5F15;&#x53F7;s: 9    &#x5DF2;&#x5339;&#x914D;&#x957F;&#x5EA6;s-1: 8 </font><br><br>| &#x5019;&#x9009;&#x524D;/&#x540E;&#x7F00;&#x5927;&#x5C0F; | &#x5019;&#x9009;&#x524D;&#x7F00; | &#x5019;&#x9009;&#x540E;&#x7F00; | &#x662F;&#x5426;&#x5339;&#x914D; |<br>| :&#x2013;: | :&#x2013;: | :&#x2013;: | :&#x2013;: |<br>| 1 | a | c | &#x5426; |<br>| 2 | ab | bc | &#x5426; |<br>| 3 | abc | abc | $\color{green}{&#x662F;}$ |<br>| 4 | abcc | babc | &#x5426; |<br>| 5 | abccb | cbabc | &#x5426; |<br>| 6 | abccba | ccbabc | &#x5426; |<br>| 7 | abccbab | bcbabc | &#x5426; |<br><br>&#x2003;&#x2003;&#x7D22;&#x5F15;&#x53F7;&#x4E3A;7&#x5904;&#x7684;&#x540E;&#x7F00;(abc)&#x6EE1;&#x8DB3;&#x4E86;&#x9884;&#x5339;&#x914D;&#x7684;&#x6761;&#x4EF6;&#xFF0C;&#x56E0;&#x6B64;&#x6211;&#x4EEC;&#x9700;&#x8981;&#x5728;&#x8FD9;&#x91CC;&#x505C;&#x4E0B;&#x6765;&#x505A;&#x4E00;&#x8F6E;&#x5339;&#x914D;&#xFF0C;&#x5373;&#x4F7F;&#x6700;&#x7EC8;&#x6CA1;&#x6709;&#x5B8C;&#x5168;&#x5339;&#x914D;&#xFF08;&#x7D22;&#x5F15;&#x53F7;11&#x5904;&#x53D1;&#x751F;&#x5931;&#x914D;&#xFF09;&#xFF0C;&#x4F46;&#x662F;&#x6211;&#x4EEC;&#x5E76;&#x4E0D;&#x80FD;&#x8DF3;&#x8FC7;&#x8FD9;&#x4E00;&#x6B65;&#x3002;<br>&#x2003;&#x2003;&#x539F;&#x56E0;&#x5C31;&#x5728;&#x4E8E;&#x4E0A;&#x4E00;&#x8F6E;&#x5339;&#x914D;&#x65F6;&#x6211;&#x4EEC;&#x7684;&#x7279;&#x5F81;&#x4E32;&#x6700;&#x53F3;&#x8FB9;&#x53EA;&#x5BF9;&#x9F50;&#x5230;&#x4E86;&#x7D22;&#x5F15;&#x53F7;&#x4E3A;10&#x7684;&#x76EE;&#x6807;&#x4E32;&#xFF08;$c$&#xFF09;&#xFF0C;&#x4E5F;&#x5C31;&#x662F;&#x8BF4;&#x5230;&#x8FD9;&#x4E00;&#x6B65;&#x4E3A;&#x6B62;&#x6211;&#x4EEC;&#x53EA;&#x77E5;&#x9053;&#x76EE;&#x6807;&#x4E32;&#x524D;&#x9762;&#x7684;10&#x4E2A;&#x5B57;&#x7B26;&#x662F;&#x4EC0;&#x4E48;&#xFF0C;&#x5B83;&#x540E;&#x9762;&#x6709;&#x4E9B;&#x4EC0;&#x4E48;&#x5B57;&#x7B26;&#x6211;&#x4EEC;&#x5E76;&#x4E0D;&#x77E5;&#x9053;&#xFF0C;&#x6240;&#x4EE5;&#x8FD8;&#x5F97;&#x8001;&#x8001;&#x5B9E;&#x5B9E;&#x8D70;&#x4E00;&#x6CE2;&#x3002;<br><br>- $c = s - 2$&#xFF0C;&#x8FD9;&#x79CD;&#x60C5;&#x51B5;&#x6BD4;&#x8F83;&#x7279;&#x6B8A;&#xFF0C;<strong>&#x8FD9;&#x79CD;&#x60C5;&#x51B5;&#x4E0B;&#x8981;&#x6C42;&#x7279;&#x5F81;&#x4E32;&#x7684;&#x524D;&#x9762;$s - 1(s \in [2, m])$&#x4E2A;&#x5B57;&#x7B26;&#x90FD;&#x5B8C;&#x5168;&#x76F8;&#x540C;</strong>&#xFF0C;&#x5982;&#x4E0B;&#x56FE;&#x6240;&#x793A;&#xFF1A;<br><br><div style="text-align:center;"><img src="/2018/04/23/&#x5B57;&#x7B26;&#x4E32;&#x5339;&#x914D;&#x7B97;&#x6CD5;&#x7CFB;&#x5217;&#x4E4B;&#x4E00;&#xFF1A;BF-KMP/&#x7279;&#x6B8A;&#x60C5;&#x51B5;&#x793A;&#x610F;&#x56FE;.png" width="500" height="200">&#x56FE;2-9&#x3000;&#x3000;&#x7279;&#x6B8A;&#x60C5;&#x51B5;&#x7684;&#x5339;&#x914D;&#x793A;&#x610F;&#x56FE;</div>
+
+<p>&#x2003;&#x2003;&#x4E0A;&#x56FE;&#x4E2D;&#x7EA2;&#x8272;&#x53CC;&#x5411;&#x7BAD;&#x5934;&#x5BF9;&#x5E94;&#x7684;&#x662F;&#x6211;&#x4EEC;&#x76EE;&#x6807;&#x4E32;&#x548C;&#x7279;&#x5F81;&#x4E32;&#x5DF2;&#x5339;&#x914D;&#x7684;&#x5B57;&#x7B26;&#xFF0C;&#x84DD;&#x8272;&#x865A;&#x7EBF;&#x90E8;&#x5206;&#x5BF9;&#x5E94;&#x7684;&#x662F;&#x9884;&#x5339;&#x914D;&#x90E8;&#x5206;&#x5B57;&#x7B26;&#x3002;&#x5F53;&#x7136;&#x8FD9;&#x79CD;&#x60C5;&#x51B5;&#x5728;&#x5B9E;&#x9645;&#x751F;&#x6D3B;&#x4E2D;&#x51FA;&#x73B0;&#x7684;&#x6982;&#x7387;&#x662F;&#x6BD4;&#x8F83;&#x5C0F;&#x7684;&#xFF0C;&#x793A;&#x4F8B;&#x5982;&#x4E0B;&#xFF1B;</p>
+<table>
+<thead>
+<tr>
+<th style="text-align:center">index</th>
+<th style="text-align:center">1</th>
+<th style="text-align:center">2</th>
+<th style="text-align:center">3</th>
+<th style="text-align:center">4</th>
+<th style="text-align:center">5</th>
+<th style="text-align:center">6</th>
+<th style="text-align:center">7</th>
+<th style="text-align:center">8</th>
+<th style="text-align:center">9</th>
+<th style="text-align:center">10</th>
+<th style="text-align:center">11</th>
+<th style="text-align:center">12</th>
+<th style="text-align:center">13</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:center">Text</td>
+<td style="text-align:center">$a$</td>
+<td style="text-align:center">$a$</td>
+<td style="text-align:center">$a$</td>
+<td style="text-align:center">$a$</td>
+<td style="text-align:center">$a$</td>
+<td style="text-align:center">$a$</td>
+<td style="text-align:center">$a$</td>
+<td style="text-align:center">$a$</td>
+<td style="text-align:center">$a$</td>
+<td style="text-align:center">$a$</td>
+<td style="text-align:center">$b$</td>
+<td style="text-align:center">$c$</td>
+<td style="text-align:center">$a$</td>
+</tr>
+<tr>
+<td style="text-align:center">i&#x2019;th iter</td>
+<td style="text-align:center"></td>
+<td style="text-align:center">$\color{green}{a}$</td>
+<td style="text-align:center">$\color{green}{a}$</td>
+<td style="text-align:center">$\color{green}{a}$</td>
+<td style="text-align:center">$\color{green}{a}$</td>
+<td style="text-align:center">$\color{green}{a}$</td>
+<td style="text-align:center">$\color{green}{a}$</td>
+<td style="text-align:center">$\color{green}{a}$</td>
+<td style="text-align:center">$\color{green}{a}$</td>
+<td style="text-align:center">$\color{red}{c}$</td>
+<td style="text-align:center"></td>
+<td style="text-align:center"></td>
+<td style="text-align:center"></td>
+<td></td>
+</tr>
+<tr>
+<td style="text-align:center">(i+1)&#x2019;th iter</td>
+<td style="text-align:center"></td>
+<td style="text-align:center"></td>
+<td style="text-align:center">$\color{green}{a}$</td>
+<td style="text-align:center">$\color{green}{a}$</td>
+<td style="text-align:center">$\color{green}{a}$</td>
+<td style="text-align:center">$\color{green}{a}$</td>
+<td style="text-align:center">$\color{green}{a}$</td>
+<td style="text-align:center">$\color{green}{a}$</td>
+<td style="text-align:center">$\color{green}{a}$</td>
+<td style="text-align:center">$\color{green}{a}$</td>
+<td style="text-align:center">$\color{red}{c}$</td>
+<td style="text-align:center"></td>
+<td style="text-align:center"></td>
+</tr>
+</tbody>
+</table>
+<p>&#x2003;&#x2003;<font size="1.8" color="grey">&#x4E0A;&#x9762;&#x8BF4;&#x7684;&#x7279;&#x5F81;&#x4E32;&#x524D;$s - 1$&#x4E2A;&#x5B57;&#x7B26;&#x90FD;&#x8981;&#x5B8C;&#x5168;&#x76F8;&#x540C;&#x8FD9;&#x4E2A;&#x7ED3;&#x8BBA;&#x8981;&#x8BC1;&#x660E;&#x662F;&#x6BD4;&#x8F83;&#x7B80;&#x5355;&#x7684;&#xFF0C;&#x62FF;&#x5F20;&#x7EB8;&#x968F;&#x4FBF;&#x753B;&#x4E00;&#x753B;&#x5C31;&#x660E;&#x767D;&#x4E86;&#x3002;&#x8FD9;&#x91CC;&#x6211;&#x4EEC;&#x8FD8;&#x662F;&#x7ED9;&#x51FA;&#x7406;&#x8BBA;&#x8BC1;&#x660E;&#x8FC7;&#x7A0B;&#xFF0C;&#x4F9B;&#x6709;&#x5174;&#x8DA3;&#x7684;&#x53C2;&#x8003;&#x3002;&#x7531;&#x4E8E;&#x7279;&#x5F81;&#x4E32;&#x4E0E;&#x76EE;&#x6807;&#x4E32;&#x5DF2;&#x7ECF;&#x5339;&#x914D;&#x4E86;&#x524D;&#x9762;$s - 1$&#x4E2A;&#x5B57;&#x7B26;&#xFF0C;&#x6240;&#x4EE5;&#x6709;&#xFF1A;</font></p>
+<p>$$<br>\color{grey}{<br>\underbrace{p_1&#x2026;p_{s-1}}_{(s - 1) - 1 + 1 = s - 1&#x4E2A;&#x5B57;&#x7B26;} = \underbrace{t_{r-s+1}&#x2026;t_{r-1}}_{(r - 1) - (r - s + 1) + 1 = s - 1&#x4E2A;&#x5B57;&#x7B26;}<br>\tag{2 - 2}}<br>$$</p>
+<p>&#x2003;&#x2003;<font size="1.8" color="grey">&#x5373;&#xFF1A;</font></p>
+<p>$$<br>\color{grey}{<br>\begin{cases}<br>p_1 = t_{r - s + 1} \\\\<br>p_2 = t_{r - s + 2} \\\\<br>\cdots \cdots \\\\<br>p_{s - 1} = t_{r - 1} \\\\<br>\end{cases}<br>\tag{2 - 3}}<br>$$</p>
+<p>&#x2003;&#x2003;<font size="1.8" color="grey">&#x518D;&#x7531;&#x9884;&#x5339;&#x914D;&#x7684;&#x6761;&#x4EF6;&#x6211;&#x4EEC;&#x6709;&#xFF1A;</font></p>
+<p>$$<br>\color{grey}{<br>\underbrace{p_1&#x2026;p_{s-2}}_{(s - 2) - 1 + 1 = s - 2&#x4E2A;&#x5B57;&#x7B26;} = \underbrace{t_{r-s+2}&#x2026;t_{r-1}}_{(r - 1) - (r - s + 2) + 1 = s - 2&#x4E2A;&#x5B57;&#x7B26;}<br>\tag{2 - 4}}<br>$$</p>
+<p>&#x2003;&#x2003;<font size="1.8" color="grey">&#x5373;&#xFF1A;</font></p>
+<p>$$<br>\color{grey}{<br>\begin{cases}<br>p_1 = t_{r - s + 2} \\\\<br>p_2 = t_{r - s + 3} \\\\<br>\cdots \qquad \cdots \\\\<br>p_{s - 2} = t_{r - 1} \\\\<br>\end{cases}<br>\tag{2 - 5}}<br>$$</p>
+<p>&#x2003;&#x2003;<font size="1.8" color="grey">&#x518D;&#x7531;&#x5F0F;&#xFF08;2-3&#xFF09;&#x3001;&#xFF08;2-5&#xFF09;&#x6709;&#xFF1A;</font></p>
+<p>$$<br>\color{grey}{<br>\underset{\triangle}{p_1} = t_{r - s + 1} = t_{r - s + 2} = \underset{\triangle}{p_2} = t_{r - s + 3} = \cdots  = \underset{\triangle}{p_{s - 2}} = t_{r - 1} = \underset{\triangle}{p_{s - 1}}\\\}<br>$$</p>
+<p>&#x2003;&#x2003;<font size="1.8" color="grey">&#x8BC1;&#x6BD5;&#xFF01;</font></p>
+<p>&#x2003;&#x2003;&#x6211;&#x4EEC;&#x7ED9;&#x5B9A;&#x7684;&#x662F;&#x6700;&#x5927;&#x524D;/&#x540E;&#x7F00;&#x4E3A;$c = s - 2$&#xFF0C;&#x4F46;&#x5B9E;&#x9645;&#x4E0A;&#x53EF;&#x4EE5;&#x5F97;&#x51FA;$c = s - 1$&#xFF0C;&#x4E0E;&#x5DF2;&#x77E5;&#x6761;&#x4EF6;&#x77DB;&#x76FE;&#xFF0C;&#x56E0;&#x6B64;&#x8FD9;&#x79CD;&#x60C5;&#x51B5;&#x4E0D;&#x5B58;&#x5728;&#x3002;<strong>&#x5B9E;&#x9645;&#x4E0A;&#x6309;&#x7167;Paper&#x4E2D;&#x7684;&#x5B9A;&#x4E49;&#xFF0C;&#x6211;&#x4EEC;&#x6240;&#x8C13;&#x7684;&#x6700;&#x5927;&#x524D;&#x7F00;&#x5FC5;&#x987B;&#x662F;&#x5DF2;&#x5339;&#x914D;&#x5B57;&#x7B26;&#x7684;&#x5B50;&#x4E32;&#x3002;Paper&#x4E2D;&#x4F7F;&#x7528;&#x7684;&#x662F;f&#x503C;&#xFF0C;&#x56E0;&#x4E3A;&#x5229;&#x7528;f&#x503C;&#x53EF;&#x4EE5;&#x975E;&#x5E38;&#x5BB9;&#x6613;&#x7684;&#x6C42;&#x89E3;&#x51FA;Next&#x503C;&#x3002;</strong>&#x7ED3;&#x5408;&#x672C;&#x6587;&#xFF0C;f&#x503C;&#x5373;&#x4E3A;&#x6700;&#x5927;&#x524D;/&#x540E;&#x7F00;&#x5927;&#x5C0F; + 1&#xFF0C;&#x6BD4;&#x5982;&#x4E0A;&#x9762;&#x8BB2;&#x7684;<a href="#second_condition_tag">&#x7B2C;&#x4E8C;&#x79CD;&#x60C5;&#x51B5;</a>&#x7279;&#x5F81;&#x4E32;&#x6700;&#x540E;&#x4E00;&#x4E2A;&#x5B57;&#x7B26;&#x5904;&#x53D1;&#x751F;&#x5931;&#x914D;&#x540E;&#xFF0C;&#x53EF;&#x4EE5;&#x6C42;&#x51FA;&#x5176;&#x6700;&#x5927;&#x524D;/&#x540E;&#x7F00;&#x4E3A;$c = 1$&#xFF0C;&#x5219;&#x8BE5;&#x7279;&#x5F81;&#x4E32;&#x5B57;&#x7B26;&#x5BF9;&#x5E94;&#x7684;f&#x503C;&#x5373;&#x4E3A;$c + 1 = 2$&#x3002;</p>
+<p>&#x2003;&#x2003;<font color="red">&#x8FD9;&#x91CC;&#x8981;&#x7279;&#x522B;&#x5F3A;&#x8C03;&#x4E0B;&#x8FD9;&#x4E2A;f&#x503C;&#xFF0C;&#x5B83;&#x662F;&#x6211;&#x4EEC;&#x7406;&#x89E3;&#x6574;&#x4E2A;KMP&#x7B97;&#x6CD5;&#x7684;&#x5173;&#x952E;&#x70B9;&#xFF0C;&#x52A1;&#x5FC5;&#x5145;&#x5206;&#x7406;&#x89E3;&#x5E76;&#x7262;&#x8BB0;&#x5176;&#x5B9A;&#x4E49;&#x3002;</font></p>
+<p>&#x2003;&#x2003;Paper&#x4E2D;&#x5173;&#x4E8E;f&#x503C;&#x7684;&#x5B9A;&#x4E49;&#x539F;&#x6587;&#x5982;&#x4E0B;&#xFF1A;</p>
+<blockquote>
+<p>Let f[j] be the largest i less than j such that pattern[1]&#x2026;pattern[i - 1] = pattern[j - i + 1]&#x2026;pattern[j- 1]</p>
+</blockquote>
+<p>&#x2003;&#x2003;&#x4E3A;&#x4E86;&#x5E73;&#x6ED1;&#x7684;&#x4E0E;Paper&#x7684;&#x6982;&#x5FF5;&#x8854;&#x63A5;&#x8D77;&#x6765;&#xFF0C;&#x6211;&#x4EEC;&#x5BF9;&#x4E00;&#x4E9B;&#x7279;&#x6B8A;&#x60C5;&#x51B5;&#x505A;&#x4E9B;&#x7EA6;&#x5B9A;&#x3002;<strong><a name="rule1"></a>&#x5BF9;&#x4E8E;$s \geq 3$&#x7684;&#x60C5;&#x51B5;&#xFF0C;c&#x503C;&#x53EF;&#x4EE5;&#x76F4;&#x63A5;&#x7528;$c = s - 3$&#x516C;&#x5F0F;&#x8BA1;&#x7B97;&#xFF0C;&#x5BF9;&#x4E8E;$s = 1$&#x65F6;&#xFF0C;&#x89C4;&#x5B9A;$c = -1$&#xFF08;&#x8FD9;&#x6837;&#x5BF9;&#x5E94;&#x7684;f&#x503C;&#x5373;&#x4E3A;0&#xFF09;&#x3002;&#x5BF9;&#x4E8E;$s = 2$&#x65F6;&#xFF0C;&#x89C4;&#x5B9A;$c = 0$&#xFF08;&#x8FD9;&#x6837;&#x5BF9;&#x5E94;&#x7684;f&#x503C;&#x5373;&#x4E3A;1&#xFF09;&#x3002;</strong><br>&#x2003;&#x2003;<font color="red" size="1.8">&#x6CE8;&#xFF1A;Paper&#x4E2D;&#x662F;&#x7528;$j$&#x6765;&#x6307;&#x5411;&#x5931;&#x914D;&#x7684;&#x7279;&#x5F81;&#x4E32;&#x5B57;&#x7B26;&#xFF0C;&#x6211;&#x4EEC;&#x7528;&#x7684;&#x662F;$s$&#x3002;</font></p>
+<p>&#x2003;&#x2003;<strong>&#x4E8E;&#x662F;&#xFF0C;&#x5BF9;&#x7ED9;&#x5B9A;&#x7684;&#x524D;&#x540E;&#x7F00;&#xFF0C;&#x5176;&#x5927;&#x5C0F;&#xFF08;&#x957F;&#x5EA6;&#xFF09;&#x4E3A;$c$&#xFF0C;&#x6211;&#x4EEC;&#x53EF;&#x6C42;&#x51FA;&#xFF0C;&#x4E0B;&#x4E00;&#x8F6E;&#x5339;&#x914D;&#x65F6;&#xFF0C;&#x7279;&#x5F81;&#x4E32;&#x5E94;&#x8BE5;&#x6CBF;&#x7740;&#x76EE;&#x6807;&#x4E32;&#x5F80;&#x524D;&#x79FB;&#x52A8;$(s - 1) - c = s - c - 1$&#x4E2A;&#x5B57;&#x7B26;&#x3002;</strong>&#x8FD9;&#x662F;&#x6211;&#x4EEC;&#x76EE;&#x6807;&#x4E32;&#x4E0A;&#x7684;&#x8DF3;&#x8DC3;&#x503C;&#x8BA1;&#x7B97;&#x516C;&#x5F0F;&#xFF0C;&#x5982;&#x4E0B;&#x6240;&#x793A;&#xFF1A;</p>
+<p><div style="text-align:center;"><img src="/2018/04/23/&#x5B57;&#x7B26;&#x4E32;&#x5339;&#x914D;&#x7B97;&#x6CD5;&#x7CFB;&#x5217;&#x4E4B;&#x4E00;&#xFF1A;BF-KMP/&#x76EE;&#x6807;&#x4E32;&#x4E0A;&#x8DF3;&#x8DC3;&#x503C;&#x8BA1;&#x7B97;&#x793A;&#x610F;&#x56FE;.png" width="500" height="200">&#x56FE;2-10&#x3000;&#x3000;&#x76EE;&#x6807;&#x4E32;&#x4E0A;&#x8DF3;&#x8DC3;&#x503C;&#x8BA1;&#x7B97;&#x793A;&#x610F;&#x56FE;</div><br>&#x2003;&#x2003;&#x53E6;&#x5916;&#x8FD8;&#x6709;&#x4E00;&#x70B9;&#x9700;&#x8981;&#x8BF4;&#x660E;&#x7684;&#x662F;&#xFF0C;&#x5F53;&#x5DF2;&#x5339;&#x914D;&#x7684;&#x8FD9;&#x4E9B;&#x5B57;&#x7B26;&#x4E32;&#x4E2D;&#x4EA7;&#x751F;&#x4E86;&#x591A;&#x4E2A;&#x9884;&#x5339;&#x914D;&#x65F6;&#xFF08;&#x4E5F;&#x5373;&#x6709;&#x4E0D;&#x540C;&#x5927;&#x5C0F;&#x7684;&#x524D;&#x7F00;/&#x540E;&#x7F00;&#xFF0C;&#x5982;&#x56FE;2-6&#x3001;2-7&#x6240;&#x793A;&#xFF09;&#xFF0C;&#x6211;&#x4EEC;&#x5728;&#x4E0B;&#x4E00;&#x8F6E;&#x5339;&#x914D;&#x64CD;&#x4F5C;&#x65F6;&#xFF0C;&#x5E94;&#x8BE5;&#x9009;&#x62E9;&#x54EA;&#x4E00;&#x4E2A;&#x9884;&#x5339;&#x914D;&#xFF1F;&#x80FD;&#x5426;&#x8DF3;&#x8FC7;&#x4E2D;&#x95F4;&#x7684;&#x67D0;&#x4E9B;&#x9884;&#x5339;&#x914D;&#xFF1F;<br>&#x2003;&#x2003;&#x7B54;&#x6848;&#x662F;&#xFF1A;<strong>&#x6709;&#x591A;&#x4E2A;&#x9884;&#x5339;&#x914D;&#x65F6;&#xFF0C;&#x4E3A;&#x907F;&#x514D;&#x6F0F;&#x5339;&#x914D;&#xFF0C;&#x5E94;&#x9009;&#x62E9;&#x5339;&#x914D;&#x957F;&#x5EA6;$c$&#x6700;&#x5927;&#x7684;&#x90A3;&#x4E00;&#x4E2A;&#xFF08;&#x5373;&#x6700;&#x5927;&#x524D;&#x7F00;/&#x540E;&#x7F00;&#xFF09;&#x4F5C;&#x4E3A;&#x4E0B;&#x4E00;&#x8F6E;&#x5339;&#x914D;&#x7684;&#x8DF3;&#x8F6C;&#x4F9D;&#x636E;</strong>&#x3002;</p>
+<h5 id="2-4-3-3-&#x5B9A;&#x4F4D;&#x4E4B;&#x8C1C;&#x4E8C;"><a href="#2-4-3-3-&#x5B9A;&#x4F4D;&#x4E4B;&#x8C1C;&#x4E8C;" class="headerlink" title="2.4.3.3 &#x5B9A;&#x4F4D;&#x4E4B;&#x8C1C;&#x4E8C;"></a>2.4.3.3 &#x5B9A;&#x4F4D;&#x4E4B;&#x8C1C;&#x4E8C;</h5><p>&#x2003;&#x2003;&#x4E0A;&#x9762;&#x6211;&#x4EEC;&#x5F97;&#x5230;&#x4E86;&#x76EE;&#x6807;&#x4E32;&#x4E0A;&#x7684;&#x8DF3;&#x8DC3;&#x503C;&#x8BA1;&#x7B97;&#x516C;&#x5F0F;&#x3002;&#x90A3;&#x4E48;&#x7279;&#x5F81;&#x4E32;&#x4E0A;&#x8DF3;&#x8DC3;&#x503C;&#x53C8;&#x600E;&#x4E48;&#x8BA1;&#x7B97;&#x516C;&#x5462;&#xFF1F;<br>&#x2003;&#x2003;&#x8FD9;&#x4E2A;&#x95EE;&#x9898;&#x8981;&#x6BD4;&#x76EE;&#x6807;&#x4E32;&#x4E0A;&#x7684;&#x8DF3;&#x8DC3;&#x7B80;&#x5355;&#x7684;&#x591A;&#xFF0C;&#x7B2C;$i + 1$&#x8F6E;&#x5339;&#x914D;&#x7684;&#x65F6;&#x5019;&#xFF0C;&#x6839;&#x636E;&#x9884;&#x5339;&#x914D;&#x7684;&#x5B9A;&#x4E49;&#xFF0C;&#x7279;&#x5F81;&#x4E32;&#x548C;&#x76EE;&#x6807;&#x4E32;&#x524D;&#x9762;&#x7684;$c$&#x4E2A;&#x5B57;&#x7B26;&#x5DF2;&#x7ECF;&#x9010;&#x4E00;&#x5339;&#x914D;&#x4E86;&#xFF0C;&#x6240;&#x4EE5;&#x6211;&#x4EEC;&#x53EA;&#x9700;&#x8981;&#x6BD4;&#x5BF9;&#x76EE;&#x6807;&#x4E32;&#x4E0A;&#x7684;$t_r$&#xFF08;&#x5373;&#x4E3A;&#x4E0A;&#x4E00;&#x8F6E;&#x5931;&#x914D;&#x7684;&#x5B57;&#x7B26;&#xFF09;&#x548C;&#x7279;&#x5F81;&#x4E32;&#x4E0A;&#x7684;&#x7B2C;$c + 1$&#x4E2A;&#x5B57;&#x7B26;$p_{c + 1}$&#x5373;&#x53EF;&#x3002;&#x4E5F;&#x5C31;&#x662F;&#x8BF4;&#xFF0C;&#x5728;&#x65B0;&#x4E00;&#x8F6E;&#x7684;&#x5339;&#x914D;&#x4E2D;&#xFF0C;&#x6211;&#x4EEC;&#x8DF3;&#x8FC7;&#x7279;&#x5F81;&#x4E32;&#x7684;&#x524D;&#x9762;$c$&#x4E2A;&#x5B57;&#x7B26;&#xFF0C;&#x5982;&#x4E0B;&#x56FE;&#x6240;&#x8BF4;&#xFF1A;</p>
+<p><div style="text-align:center;"><img src="/2018/04/23/&#x5B57;&#x7B26;&#x4E32;&#x5339;&#x914D;&#x7B97;&#x6CD5;&#x7CFB;&#x5217;&#x4E4B;&#x4E00;&#xFF1A;BF-KMP/&#x7279;&#x5F81;&#x4E32;&#x4E0A;&#x8DF3;&#x8DC3;&#x503C;&#x8BA1;&#x7B97;&#x793A;&#x610F;&#x56FE;.png" width="500" height="200">&#x56FE;2-11&#x3000;&#x3000;&#x7279;&#x5F81;&#x4E32;&#x4E0A;&#x8DF3;&#x8DC3;&#x503C;&#x8BA1;&#x7B97;&#x793A;&#x610F;&#x56FE;</div><br>&#x2003;&#x2003;&#x4E5F;&#x5C31;&#x662F;&#x8BF4;&#xFF0C;&#x8981;&#x5B9E;&#x73B0;&#x7279;&#x5F81;&#x4E32;&#x4E0A;&#x7684;&#x91CD;&#x5B9A;&#x4F4D;&#xFF0C;&#x53EA;&#x9700;&#x8981;&#x4F7F;&#x7528;&#x524D;&#x7F00;/&#x540E;&#x7F00;&#x4FE1;&#x606F;&#x5373;&#x53EF;&#x3002;</p>
+<p>&#x2003;&#x2003;&#x7EFC;&#x4E0A;&#x6240;&#x8FF0;&#xFF0C;Next&#x6570;&#x7EC4;&#x6B63;&#x662F;&#x5B58;&#x50A8;&#x4E86;&#x8FD9;&#x4E9B;&#x4FE1;&#x606F;&#xFF0C;&#x4F7F;&#x5F97;&#x6211;&#x4EEC;&#x53EF;&#x4EE5;&#x7CBE;&#x51C6;&#x7684;&#x5728;&#x76EE;&#x6807;&#x4E32;&#x548C;&#x7279;&#x5F81;&#x4E32;&#x4E0A;&#x8DF3;&#x8DC3;&#x5339;&#x914D;&#x3002;</p>
+<h5 id="2-4-3-4-Next&#x6570;&#x7EC4;&#x5927;&#x5C0F;"><a href="#2-4-3-4-Next&#x6570;&#x7EC4;&#x5927;&#x5C0F;" class="headerlink" title="2.4.3.4 Next&#x6570;&#x7EC4;&#x5927;&#x5C0F;"></a>2.4.3.4 Next&#x6570;&#x7EC4;&#x5927;&#x5C0F;</h5><p>&#x2003;&#x2003;&#x89E3;&#x5F00;&#x4E86;Next&#x6570;&#x7EC4;&#x7684;&#x5B9A;&#x4F4D;&#x4E4B;&#x8C1C;&#xFF0C;&#x6211;&#x4EEC;&#x6765;&#x770B;Next&#x6570;&#x7EC4;&#x7684;&#x5927;&#x5C0F;&#x662F;&#x8DDF;&#x4EC0;&#x4E48;&#x6709;&#x5173;&#xFF0C;&#x662F;&#x76EE;&#x6807;&#x4E32;&#x8FD8;&#x662F;&#x7279;&#x5F81;&#x4E32;&#xFF1F;&#x662F;&#x53EA;&#x9700;&#x8981;&#x8BA1;&#x7B97;&#x4E00;&#x6B21;&#xFF0C;&#x8FD8;&#x662F;&#x8981;&#x5728;&#x5339;&#x914D;&#x8FC7;&#x7A0B;&#x4E2D;&#x91CD;&#x590D;&#x8BA1;&#x7B97;&#xFF1F;&#x53EA;&#x6709;&#x786E;&#x5B9A;&#x4E86;&#x8FD9;&#x4E24;&#x4E2A;&#x95EE;&#x9898;&#xFF0C;&#x6211;&#x4EEC;&#x624D;&#x80FD;&#x7EE7;&#x7EED;&#x8BA8;&#x8BBA;&#x4E0B;&#x4E00;&#x6B65;&#x5982;&#x4F55;&#x8BA1;&#x7B97;&#x7684;&#x95EE;&#x9898;&#x3002;<br>&#x2003;&#x2003;&#x6211;&#x4EEC;&#x77E5;&#x9053;Next&#x6570;&#x7EC4;&#x4FDD;&#x5B58;&#x7684;&#x662F;&#x5F53;&#x76EE;&#x6807;&#x4E32;&#x548C;&#x7279;&#x5F81;&#x4E32;&#x53D1;&#x751F;&#x5931;&#x914D;&#x7684;&#x65F6;&#x5019;&#x7684;&#x8DF3;&#x8F6C;&#x4FE1;&#x606F;&#xFF0C;&#x4E5F;&#x5C31;&#x662F;&#x8BF4;&#xFF0C;&#x6709;&#x591A;&#x5C11;&#x79CD;&#x5931;&#x914D;&#x7684;&#x60C5;&#x51B5;&#xFF0C;&#x5C31;&#x9700;&#x8981;&#x4FDD;&#x5B58;&#x591A;&#x5C11;&#x6761;&#x8DF3;&#x8F6C;&#x8BB0;&#x5F55;&#x3002;&#x5C3D;&#x7BA1;&#x76EE;&#x6807;&#x4E32;&#x957F;&#x5EA6;&#x4E0D;&#x5B9A;&#xFF0C;&#x5185;&#x5BB9;&#x4E5F;&#x672A;&#x77E5;&#xFF0C;&#x4F46;&#x662F;&#x7279;&#x5F81;&#x4E32;&#x662F;&#x56FA;&#x5B9A;&#x548C;&#x5DF2;&#x77E5;&#x7684;&#x3002;&#x5BF9;&#x957F;&#x5EA6;&#x4E3A;$m$&#x7684;&#x7279;&#x5F81;&#x4E32;&#xFF0C;&#x4E0D;&#x7BA1;&#x5F53;&#x524D;&#x5339;&#x914D;&#x5230;&#x4E86;&#x76EE;&#x6807;&#x4E32;&#x7684;&#x4EC0;&#x4E48;&#x4F4D;&#x7F6E;&#xFF0C;&#x5931;&#x914D;&#x80AF;&#x5B9A;&#x662F;&#x7279;&#x5F81;&#x4E32;&#x7684;$p_0&#x2026;p_m$&#x4E2D;&#x7684;&#x67D0;&#x4E2A;&#x5B57;&#x7B26;&#x4E0E;&#x76EE;&#x6807;&#x4E32;&#x4E0D;&#x5339;&#x914D;&#xFF0C;&#x5931;&#x914D;&#x7684;&#x60C5;&#x5F62;&#x4E5F;&#x53EA;&#x6709;&#x6709;&#x9650;&#x7684;$m$&#x79CD;&#xFF0C;&#x6211;&#x4EEC;&#x53EA;&#x9700;&#x8981;&#x628A;&#x7279;&#x5F81;&#x4E32;&#x6BCF;&#x4E00;&#x4E2A;&#x5B57;&#x7B26;&#x5931;&#x914D;&#x65F6;&#x5BF9;&#x5E94;&#x7684;&#x8DF3;&#x8F6C;&#x4FE1;&#x606F;&#x4FDD;&#x5B58;&#x8D77;&#x6765;&#x5C31;&#x53EF;&#x4EE5;&#x4E86;&#x3002;<br>&#x2003;&#x2003;<strong>&#x5373;Next&#x6570;&#x7EC4;&#x5927;&#x5C0F;&#x53EA;&#x8DDF;&#x7279;&#x5F81;&#x4E32;&#x957F;&#x5EA6;&#x6709;&#x5173;&#xFF0C;&#x5B83;&#x7684;&#x5927;&#x5C0F;&#x5373;&#x4E3A;&#x7279;&#x5F81;&#x4E32;&#x957F;&#x5EA6;&#x3002;</strong><br>&#x2003;&#x2003;&#x5047;&#x5B9A;&#x7279;&#x5F81;&#x4E32;&#x7684;&#x67D0;&#x4E00;&#x4E2A;&#x5B57;&#x7B26;&#x5728;&#x76EE;&#x6807;&#x4E32;&#x4E0D;&#x540C;&#x4F4D;&#x7F6E;&#x4E0A;&#x524D;&#x540E;&#x4E24;&#x6B21;&#x53D1;&#x751F;&#x4E86;&#x5931;&#x914D;&#xFF0C;&#x6211;&#x4EEC;&#x53EA;&#x9700;&#x8981;&#x8003;&#x5BDF;&#x8FD9;&#x4E24;&#x79CD;&#x60C5;&#x51B5;&#x4E0B;&#x7684;&#x8DF3;&#x8DC3;&#x503C;&#x662F;&#x5426;&#x6709;&#x5DEE;&#x5F02;&#xFF0C;&#x5C31;&#x77E5;&#x9053;Next&#x6570;&#x7EC4;&#x662F;&#x5426;&#x9700;&#x8981;&#x53CD;&#x590D;&#x8BA1;&#x7B97;&#x4E86;&#xFF0C;&#x5982;&#x4E0B;&#x56FE;&#x6240;&#x793A;&#xFF1A;</p>
+<p><div style="text-align:center;"><img src="/2018/04/23/&#x5B57;&#x7B26;&#x4E32;&#x5339;&#x914D;&#x7B97;&#x6CD5;&#x7CFB;&#x5217;&#x4E4B;&#x4E00;&#xFF1A;BF-KMP/&#x4E0D;&#x540C;&#x4F4D;&#x7F6E;&#x5339;&#x914D;&#x5931;&#x8D25;&#x793A;&#x610F;&#x56FE;.png" width="500" height="200">&#x56FE;2-12&#x3000;&#x3000;&#x4E0D;&#x540C;&#x4F4D;&#x7F6E;&#x5339;&#x914D;&#x5931;&#x8D25;&#x793A;&#x610F;&#x56FE;.png</div><br>&#x2003;&#x2003;&#x5982;&#x4E0A;&#x56FE;&#x6240;&#x793A;&#xFF0C;&#x5047;&#x5B9A;&#x4EFB;&#x610F;&#x4E24;&#x6B21;&#x5931;&#x914D;&#x5747;&#x662F;&#x5728;&#x7D22;&#x5F15;&#x53F7;&#x4E3A;$s$&#x7684;&#x7279;&#x5F81;&#x4E32;&#x5904;&#xFF0C;&#x5373;&#x524D;&#x9762;&#x5747;&#x5339;&#x914D;&#x4E86;$s - 1$&#x4E2A;&#x5B57;&#x7B26;&#x3002;&#x7531;&#x524D;&#x9762;&#x7684;&#x5185;&#x5BB9;&#x53EF;&#x77E5;&#xFF0C;&#x7B2C;$i + 1$&#x8F6E;&#x5339;&#x914D;&#x65F6;&#x5E94;&#x8DF3;&#x8DC3;&#x7684;&#x5B57;&#x7B26;&#x6570;&#xFF0C;&#x53D6;&#x51B3;&#x4E8E;&#x7B2C;$i$&#x8F6E;&#x5DF2;&#x5339;&#x914D;&#x7684;$s - 1$&#x4E2A;&#x5B57;&#x7B26;&#x7684;&#x6700;&#x5927;&#x524D;&#x7F00;/&#x540E;&#x7F00;&#xFF0C;&#x6211;&#x4EEC;&#x8BB0;&#x4E3A;$c_{s-1}^{i}$&#xFF08;&#x7B2C;$i$&#x8F6E;&#x5339;&#x914D;&#xFF0C;&#x7279;&#x5F81;&#x4E32;&#x4F4D;&#x7F6E;$s - 1$&#x5904;&#x53D1;&#x751F;&#x5931;&#x914D;&#x7684;&#x6700;&#x5927;&#x524D;&#x7F00;/&#x540E;&#x7F00;) &#x3002;&#x540C;&#x7406;&#xFF0C;&#x7B2C;$(i + k )+ 1$&#x8F6E;&#x5339;&#x914D;&#x65F6;&#x5E94;&#x8DF3;&#x8DC3;&#x7684;&#x5B57;&#x7B26;&#x6570;&#xFF0C;&#x4ECD;&#x7136;&#x53D6;&#x51B3;&#x4E8E;&#x7B2C;$i + k$&#x8F6E;&#x5DF2;&#x5339;&#x914D;&#x7684;$s - 1$&#x4E2A;&#x5B57;&#x7B26;&#x7684;&#x6700;&#x5927;&#x524D;&#x7F00;/&#x540E;&#x7F00;&#xFF0C;&#x6211;&#x4EEC;&#x8BB0;&#x4E3A;$c_{s-1}^{i + k}$&#xFF08;&#x7B2C;$i+k$&#x8F6E;&#x5339;&#x914D;&#xFF0C;&#x7279;&#x5F81;&#x4E32;&#x4F4D;&#x7F6E;$s - 1$&#x5904;&#x53D1;&#x751F;&#x5931;&#x914D;&#x7684;&#x6700;&#x5927;&#x524D;&#x7F00;/&#x540E;&#x7F00;&#xFF09;&#x3002;</p>
+<p>&#x2003;&#x2003;&#x7531;&#x4E8E;&#x4E24;&#x6B21;&#x5931;&#x914D;&#x65F6;&#x7684;&#x7279;&#x5F81;&#x4E32;&#x5B57;&#x7B26;&#x662F;&#x76F8;&#x540C;&#x7684;&#xFF08;&#x5DF2;&#x7ECF;&#x5339;&#x914D;&#x7684;&#x5B57;&#x7B26;&#x6570;&#x548C;&#x5B57;&#x7B26;&#x5185;&#x5BB9;&#x5747;&#x76F8;&#x540C;&#xFF09;&#xFF0C;&#x5373;&#x6709;$c_{s-1}^{i} = c_{s-1}^{i + k}$&#xFF08;&#x56E0;&#x4E3A;&#x76F8;&#x540C;&#x7279;&#x5F81;&#x4E32;&#x540C;&#x4E00;&#x4F4D;&#x7F6E;&#x5904;&#x5176;&#x6700;&#x5927;&#x524D;&#x7F00;/&#x540E;&#x7F00;&#x5FC5;&#x7136;&#x662F;&#x4E00;&#x6837;&#x7684;&#xFF09;&#xFF0C;&#x56E0;&#x6B64;&#x5176;&#x5728;&#x76EE;&#x6807;&#x4E32;&#x4E0A;&#x7684;&#x8DF3;&#x8DC3;&#x503C;&#x3001;&#x5728;&#x7279;&#x5F81;&#x4E32;&#x4E0A;&#x7684;&#x8DF3;&#x8DC3;&#x503C;&#x5FC5;&#x7136;&#x4E5F;&#x662F;&#x76F8;&#x540C;&#x7684;&#x3002;</p>
+<p>&#x2003;&#x2003;<strong>&#x5373;Next&#x6570;&#x7EC4;&#x5B58;&#x653E;&#x7684;&#x8DF3;&#x8DC3;&#x503C;&#xFF0C;&#x53EA;&#x9700;&#x8981;&#x5728;&#x5F00;&#x59CB;&#x8FDB;&#x884C;&#x5339;&#x914D;&#x524D;&#x8BA1;&#x7B97;&#x4E00;&#x6B21;&#xFF0C;&#x53EA;&#x8981;&#x6211;&#x4EEC;&#x8981;&#x5339;&#x914D;&#x7684;&#x7279;&#x5F81;&#x4E32;&#x4E0D;&#x53D8;&#xFF0C;&#x8FD9;&#x4E9B;&#x503C;&#x5C31;&#x4E0D;&#x4F1A;&#x53D8;&#x3002;</strong></p>
+<h5 id="2-4-3-5-F&#x6570;&#x7EC4;&#x8BA1;&#x7B97;"><a href="#2-4-3-5-F&#x6570;&#x7EC4;&#x8BA1;&#x7B97;" class="headerlink" title="2.4.3.5 F&#x6570;&#x7EC4;&#x8BA1;&#x7B97;"></a>2.4.3.5 F&#x6570;&#x7EC4;&#x8BA1;&#x7B97;</h5><p>&#x2003;&#x2003;&#x89E3;&#x5F00;&#x4E86;Next&#x6570;&#x7EC4;&#x7684;&#x524D;&#x4E24;&#x4E2A;&#x95EE;&#x9898;&#xFF0C;&#x73B0;&#x5728;&#x53EA;&#x5269;&#x4E0B;&#x6700;&#x540E;&#x4E00;&#x4E2A;&#xFF0C;&#x5373;&#x5982;&#x4F55;&#x8BA1;&#x7B97;&#x3002;&#x524D;&#x9762;&#x6211;&#x4EEC;&#x63D0;&#x4E86;&#x4E0B;&#xFF0C;&#x53EA;&#x8981;&#x6C42;&#x51FA;f&#x6570;&#x7EC4;&#x7684;&#x503C;&#xFF0C;&#x5C31;&#x80FD;&#x8F7B;&#x677E;&#x7684;&#x6C42;&#x89E3;&#x51FA;Next&#x6570;&#x7EC4;&#x503C;&#xFF0C;&#x800C;f&#x503C;&#x53C8;&#x662F;&#x8DDF;&#x6211;&#x4EEC;&#x7684;&#x6700;&#x5927;&#x524D;/&#x540E;&#x7F00;&#x7D27;&#x5BC6;&#x76F8;&#x5173;&#x7684;&#x3002;&#x56E0;&#x6B64;&#x53EA;&#x8981;&#x6211;&#x4EEC;&#x5148;&#x627E;&#x5230;&#x6700;&#x5927;&#x524D;/&#x540E;&#x7F00;&#xFF0C;&#x5C31;&#x80FD;&#x6C42;&#x51FA;&#x76F8;&#x5E94;&#x7684;f&#x503C;&#xFF0C;&#x8FDB;&#x800C;&#x6C42;&#x89E3;Next&#x503C;&#x3002;<br>&#x2003;&#x2003;<strong>&#x6700;&#x5927;&#x524D;&#x540E;&#x7F00;&#xFF08;&#x5305;&#x62EC;f&#x3001;Next&#x6570;&#x7EC4;&#xFF09;&#x7684;&#x8BA1;&#x7B97;&#xFF0C;&#x7528;&#x5230;&#x4E86;&#x9012;&#x5F52;&#x7684;&#x601D;&#x60F3;&#xFF1A;&#x9664;&#x7279;&#x5F81;&#x4E32;&#x524D;2&#x4E2A;&#x5B57;&#x7B26;&#x5916;&#x7684;&#x6BCF;&#x4E00;&#x4E2A;&#x5B57;&#x7B26;&#xFF0C;&#x5176;&#x6700;&#x5927;&#x524D;/&#x540E;&#x7F00;&#x7684;&#x8BA1;&#x7B97;&#x90FD;&#x662F;&#x6839;&#x636E;&#x5176;&#x4E0A;&#x4E00;&#x4E2A;&#x5B57;&#x7B26;&#x7684;&#x6700;&#x5927;&#x524D;/&#x540E;&#x7F00;&#x63A8;&#x7B97;&#x51FA;&#x6765;&#x7684;&#x3002;</strong></p>
+<p>&#x2003;&#x2003;&#x6211;&#x4EEC;&#x4ECD;&#x7136;&#x4EE5;$s$&#x6307;&#x5411;&#x5F53;&#x524D;&#x8981;&#x8BA1;&#x7B97;&#x6700;&#x5927;&#x524D;&#x7F00;&#x7684;&#x7279;&#x5F81;&#x4E32;&#x5B57;&#x7B26;&#xFF0C;&#x7528;$p_s$&#x8868;&#x793A;&#x8FD9;&#x4E2A;&#x5B57;&#x7B26;&#xFF0C;<strong>&#x518D;&#x6B21;&#x5F3A;&#x8C03;&#xFF0C;&#x4E3A;&#x4E86;&#x8DDF;Paper&#x7ED3;&#x5408;&#x8D77;&#x6765;&#xFF0C;&#x6211;&#x4EEC;&#x91C7;&#x7528;$f[t]$&#x8868;&#x793A;&#x7279;&#x5F81;&#x4E32;&#x7D22;&#x5F15;&#x53F7;&#x4E3A;t&#x7684;&#x5B57;&#x7B26;&#x7684;&#x6700;&#x5927;&#x524D;/&#x540E;&#x7F00;&#x957F;&#x5EA6;&#x503C; + 1&#xFF08;&#x4E5F;&#x5373;&#x4E0B;&#x4E00;&#x4E2A;&#x5F85;&#x5339;&#x914D;&#x5B57;&#x7B26;&#xFF09;&#x3002;</strong></p>
+<p>&#x2003;&#x2003;&#x5047;&#x5B9A;&#x6211;&#x4EEC;&#x73B0;&#x5728;&#x5DF2;&#x7ECF;&#x8BA1;&#x7B97;&#x597D;&#x4E86;$p_s$&#x7684;&#x6700;&#x5927;&#x524D;&#x7F00;&#x4E3A;$c_s$&#xFF08;&#x5373;&#x6709;$f[s] = c_{s + 1} + 1$&#xFF09;&#xFF0C;&#x73B0;&#x5728;&#x8981;&#x8BA1;&#x7B97;&#x5176;&#x4E0B;&#x4E00;&#x4E2A;&#x5B57;&#x7B26;$p_{s+1}$&#x7684;&#x6700;&#x5927;&#x524D;&#x7F00;$c_{s+1}$&#xFF08;&#x5373;&#x6709;$f[s+1] = c_s + 1$&#xFF09;&#xFF0C;&#x5982;&#x4E0B;&#x56FE;&#x6240;&#x793A;&#xFF1A;</p>
+<p><div style="text-align:center;"><img src="/2018/04/23/&#x5B57;&#x7B26;&#x4E32;&#x5339;&#x914D;&#x7B97;&#x6CD5;&#x7CFB;&#x5217;&#x4E4B;&#x4E00;&#xFF1A;BF-KMP/&#x6700;&#x5927;&#x524D;&#x540E;&#x7F00;&#x9012;&#x5F52;&#x8BA1;&#x7B97;&#x793A;&#x610F;&#x56FE;1.png" width="500" height="120">&#x56FE;2-13&#x3000;&#x3000;&#x6700;&#x5927;&#x524D;&#x540E;&#x7F00;&#x9012;&#x5F52;&#x8BA1;&#x7B97;&#x793A;&#x610F;&#x56FE;1.png</div><br>&#x2003;&#x2003;&#x7531;&#x56FE;&#x53EF;&#x77E5;&#xFF0C;&#x8981;&#x8BA1;&#x7B97;$p_{s+1}$&#x5BF9;&#x5E94;&#x7684;&#x6700;&#x5927;&#x524D;/&#x540E;&#x7F00;$c_{s+1}$&#xFF0C;&#x53EA;&#x9700;&#x8981;&#x628A;$p_s$&#x52A0;&#x5165;&#x540E;&#x7F00;&#xFF0C;&#x7136;&#x540E;&#x53BB;&#x5BFB;&#x627E;&#x76F8;&#x5E94;&#x7684;&#x524D;&#x7F00;&#x5373;&#x53EF;&#x3002;&#x8FD9;&#x4E2A;&#x65F6;&#x5019;&#x6211;&#x4EEC;&#x7684;&#x540E;&#x7F00;&#xFF08;&#x5927;&#x5C0F;&#x4E3A;$c_{s+1}$&#xFF09;&#x5373;&#x4E3A;&#xFF1A;</p>
+<p>$$<br>suffix&#x2019; = suffix + p_s<br>$$</p>
+<p>&#x2003;&#x2003;&#x4ECE;&#x56FE;&#x4E0A;&#x53EF;&#x4EE5;&#x770B;&#x51FA;&#xFF0C;&#x5982;&#x679C;$p_s$&#x5BF9;&#x5E94;&#x7684;&#x524D;&#x7F00;&#x7684;&#x540E;&#x4E00;&#x4E2A;&#x5B57;&#x7B26;&#x6EE1;&#x8DB3;$p_{c_s + 1}(pattern[f[s]]) = p_s$&#xFF0C;&#x90A3;&#x4E48;&#x8FD9;&#x4E2A;&#x5B57;&#x7B26;&#x52A0;&#x5230;&#x4E4B;&#x524D;&#x7684;&#x524D;&#x7F00;&#x91CC;&#x9762;&#x53BB;&#x5C31;&#x662F;&#x6211;&#x4EEC;&#x8981;&#x627E;&#x7684;&#x524D;&#x7F00;&#xFF0C;&#x5373;&#x6709;&#xFF1A;</p>
+<p>$$<br>\begin{cases}<br>f[s + 1] = f[s] + 1\\\\<br>\\\\<br>preffix&#x2019; = preffix + p_{c_s + 1}<br>\end{cases}<br>$$</p>
+<p>&#x2003;&#x2003;&#x6B64;&#x65F6;&#x7684;&#x5339;&#x914D;&#x60C5;&#x51B5;&#x5982;&#x4E0B;&#x56FE;&#x6240;&#x793A;&#xFF1A;</p>
+<p><div style="text-align:center;"><img src="/2018/04/23/&#x5B57;&#x7B26;&#x4E32;&#x5339;&#x914D;&#x7B97;&#x6CD5;&#x7CFB;&#x5217;&#x4E4B;&#x4E00;&#xFF1A;BF-KMP/&#x6700;&#x5927;&#x524D;&#x540E;&#x7F00;&#x9012;&#x5F52;&#x8BA1;&#x7B97;&#x793A;&#x610F;&#x56FE;2.png" width="500" height="120">&#x56FE;2-14&#x3000;&#x3000;&#x6700;&#x5927;&#x524D;&#x540E;&#x7F00;&#x9012;&#x5F52;&#x8BA1;&#x7B97;&#x793A;&#x610F;&#x56FE;2.png</div><br>&#x2003;&#x2003;&#x5F53;&#x4E0D;&#x6EE1;&#x8DB3;$p_{c_s + 1}(pattern[f[s]]) = p_s$&#x65F6;&#xFF0C;&#x6C42;&#x89E3;&#x7A0D;&#x5FAE;&#x590D;&#x6742;&#x4E00;&#x70B9;&#xFF0C;&#x8FD9;&#x79CD;&#x60C5;&#x51B5;&#x5B9E;&#x9645;&#x4E0A;&#x53EF;&#x4EE5;&#x7B49;&#x4EF7;&#x4E3A;&#x5982;&#x4E0B;&#x56FE;&#x6240;&#x793A;&#x7684;&#x6837;&#x5B50;&#xFF1A;</p>
+<p><div style="text-align:center;"><img src="/2018/04/23/&#x5B57;&#x7B26;&#x4E32;&#x5339;&#x914D;&#x7B97;&#x6CD5;&#x7CFB;&#x5217;&#x4E4B;&#x4E00;&#xFF1A;BF-KMP/&#x6700;&#x5927;&#x524D;&#x540E;&#x7F00;&#x9012;&#x5F52;&#x8BA1;&#x7B97;&#x793A;&#x610F;&#x56FE;3.png" width="500" height="150">&#x56FE;2-15&#x3000;&#x3000;&#x6700;&#x5927;&#x524D;&#x540E;&#x7F00;&#x9012;&#x5F52;&#x8BA1;&#x7B97;&#x793A;&#x610F;&#x56FE;3.png</div><br>&#x2003;&#x2003;&#x8FD9;&#x4E2A;&#x65F6;&#x5019;&#xFF0C;&#x7279;&#x5F81;&#x4E32;&#x5373;&#x662F;&#x76EE;&#x6807;&#x4E32;&#xFF0C;&#x53C8;&#x662F;&#x7279;&#x5F81;&#x4E32;&#x3002;&#x6CA1;&#x9519;&#xFF0C;&#x7279;&#x5F81;&#x4E32;&#x81EA;&#x5DF1;&#x8DDF;&#x81EA;&#x5DF1;&#x73A9;&#x4E86;&#x8D77;&#x6765;&#xFF01;<strong>&#x8FD9;&#x4E2A;&#x65F6;&#x5019;&#x7684;$p_{c_s + 1} \neq p_s$&#x5176;&#x5B9E;&#x5C31;&#x662F;&#x7279;&#x5F81;&#x4E32;&#x5728;$p_{c_s + 1}$&#x5904;&#x53D1;&#x751F;&#x4E86;&#x5931;&#x914D;&#xFF08;&#x5176;&#x6700;&#x5927;&#x524D;/&#x540E;&#x7F00;&#x4E3A;$f[c_s + 1] - 1$&#xFF09;&#xFF01;</strong>&#x800C;&#x8FD9;&#x4E2A;&#x4F4D;&#x7F6E;&#x5931;&#x914D;&#x65F6;&#x7684;&#x6700;&#x5927;&#x524D;/&#x540E;&#x7F00;&#x6211;&#x4EEC;&#x662F;&#x5DF2;&#x77E5;&#x7684;&#xFF08;&#x56E0;&#x4E3A;&#x6211;&#x4EEC;&#x5DF2;&#x7ECF;&#x6C42;&#x51FA;&#x4E86;&#x524D;&#x9762;$s$&#x4E2A;&#x5B57;&#x7B26;&#x7684;&#x6700;&#x5927;&#x524D;&#x7F00;&#xFF0C;&#x800C;$c_s + 1 &lt; s$&#xFF09;&#x3002;</p>
+<p>&#x2003;&#x2003;&#x800C;&#x8FD9;&#x4E2A;&#x65F6;&#x5019;&#x6211;&#x4EEC;&#x53D6;&#x51FA;&#x8FD9;&#x4E2A;&#x6700;&#x5927;&#x524D;&#x7F00;&#xFF0C;&#x628A;&#x8FD9;&#x4E2A;&#x524D;&#x7F00;&#x7684;&#x540E;&#x4E00;&#x4E2A;&#x5B57;&#x7B26;&#xFF08;&#x5373;&#x4E3A;$pattern[f[c_s+1]]$&#xFF09;&#x548C;$p_s$&#x6BD4;&#x8F83;&#xFF0C;&#x5982;&#x679C;&#x76F8;&#x540C;&#xFF0C;&#x5219;&#x5F00;&#x59CB;&#x7684;$f[c_s+1]$&#x4E2A;&#x5B57;&#x7B26;&#x5373;&#x4E3A;&#x6211;&#x4EEC;&#x6700;&#x7EC8;&#x7684;$preffix&#x2019;$&#x3002;&#x5982;&#x679C;&#x4E0D;&#x76F8;&#x540C;&#xFF0C;&#x90A3;&#x4E48;&#x518D;&#x4EE5;&#x7279;&#x5F81;&#x4E32;&#x7D22;&#x5F15;&#x53F7;&#x4E3A;$f[c_s+1]$&#x7684;&#x5B57;&#x7B26;&#x4E3A;&#x5931;&#x914D;&#x5B57;&#x7B26;&#xFF0C;&#x627E;&#x5230;&#x5176;f&#x503C;&#xFF0C;&#x518D;&#x7528;&#x8FD9;&#x4E2A;f&#x503C;&#x5BF9;&#x5E94;&#x7684;&#x5B57;&#x7B26;&#x548C;$p_s$&#x6BD4;&#x8F83;&#x3002;&#x5982;&#x6B64;&#x91CD;&#x590D;&#xFF0C;&#x76F4;&#x5230;&#x627E;&#x5230;&#x5339;&#x914D;&#x7684;&#x5B57;&#x7B26;&#x6216;&#x8005;&#x8017;&#x5C3D;&#x4E86;&#x6240;&#x6709;&#x5B57;&#x7B26;&#xFF08;&#x4E0D;&#x5B58;&#x5728;&#x5339;&#x914D;&#x7684;&#x524D;&#x7F00;&#xFF0C;&#x6B64;&#x65F6;&#x7F6E;&#x5176;f&#x503C;&#x4E3A;1&#xFF09;&#xFF0C;&#x5982;&#x4E0B;&#x56FE;&#x6240;&#x793A;&#xFF1A;</p>
+<p><div style="text-align:center;"><img src="/2018/04/23/&#x5B57;&#x7B26;&#x4E32;&#x5339;&#x914D;&#x7B97;&#x6CD5;&#x7CFB;&#x5217;&#x4E4B;&#x4E00;&#xFF1A;BF-KMP/&#x6700;&#x5927;&#x524D;&#x540E;&#x7F00;&#x9012;&#x5F52;&#x8BA1;&#x7B97;&#x793A;&#x610F;&#x56FE;4.png" width="500" height="250">&#x56FE;2-16&#x3000;&#x3000;&#x6700;&#x5927;&#x524D;&#x540E;&#x7F00;&#x9012;&#x5F52;&#x8BA1;&#x7B97;&#x793A;&#x610F;&#x56FE;4.png</div><br>&#x2003;&#x2003;&#x7EFC;&#x4E0A;&#xFF0C;&#x7ED9;&#x5B9A;&#x7279;&#x5F81;&#x4E32;&#x540E;&#xFF0C;&#x5176;f&#x503C;&#x7684;&#x8BA1;&#x7B97;&#x53EF;&#x5F52;&#x7EB3;&#x4E3A;&#x4E0B;&#x5F0F;&#xFF1A;</p>
+<p>$$<br>f[s + 1] = \begin{cases}<br>f[s] + 1, \quad if \ pattern[s] \ = \ pattern[f[s]] \\\\<br>\\\\<br>f[f[s]], \quad if \ pattern[s] \ \neq \ pattern[f[s]] \\\\<br>\end{cases}<br>\tag{2 - 6}<br>$$</p>
+<p>&#x2003;&#x2003;&#x6C42;&#x6700;&#x5927;&#x524D;/&#x540E;&#x7F00;&#x7684;&#x7B97;&#x6CD5;&#x4F2A;&#x4EE3;&#x7801;&#xFF08;<strong>&#x76F8;&#x8F83;&#x4E8E;Paper&#x7565;&#x6709;&#x6539;&#x52A8;</strong>&#xFF09;&#x5982;&#x4E0B;&#xFF1A;</p>
+<p>$$<br>\begin{split}<br>&amp; \overline{\underline{\textbf{Algorithm  1    } \qquad \qquad \qquad \qquad \qquad \qquad \qquad \qquad \qquad \qquad \qquad}} \\\\<br>&amp; \textbf{Input:    pattern} \\\\<br>&amp; \textbf{Output:   f[m]} \\\\<br>&amp; \textbf{function} \quad preffix\_suffix\_algorithm(pattern): \\\\<br>&amp;1 \qquad  m \ = \ pattern.length \\\\<br>&amp;2 \qquad  f[1] \ = \ 0, \quad k= \ 1\\\\<br>&amp;3 \qquad  \textbf{while} \ \ k \  &lt;  \ m \\\\\<br>&amp;4 \qquad  \qquad t:= \ f[k]\\\\<br>&amp;5 \qquad  \qquad \textbf{while} \  \ t \  &gt; \ 0 \ \ \textbf{and} \ \ pattern[t] \ \neq \ pattern[k] \\\\<br>&amp;6 \qquad  \qquad  \qquad t:=\ f[t] \\\\<br>&amp;7 \qquad  \qquad f[k + 1]:=\ t \ + \ 1 \\\\<br>&amp;8 \qquad  \qquad  k:=\ k \ + \ 1 \\\\<br>&amp;9 \qquad  \textbf{return} \ \ f \\\\<br>&amp; \underline{\textbf{end    function} \qquad \qquad \qquad \qquad \qquad \qquad \qquad \qquad \qquad \qquad \qquad} \\\\<br>\end{split}<br>$$</p>
+<p>&#x2003;&#x2003;<strong>&#x6CE8;&#x610F;&#xFF1A;&#x524D;&#x9762;&#x6211;&#x4EEC;&#x5DF2;&#x7ECF;&#x63D0;&#x5230;&#x4E86;&#xFF0C;&#x5BF9;&#x4E8E;&#x7279;&#x5F81;&#x4E32;&#x7684;&#x7B2C;1&#x3001;2&#x4E2A;&#x5B57;&#x7B26;&#xFF0C;&#x5176;f&#x503C;&#x6BD4;&#x8F83;&#x7279;&#x6B8A;&#xFF0C;&#x5206;&#x522B;&#x7F6E;&#x4E3A;0&#x3001;1&#x3002;</strong></p>
+<p>&#x2003;&#x2003;<font color="red">&#x4E0A;&#x5F0F;&#xFF08;2-6&#xFF09;&#x4EE5;&#x53CA;&#x5176;&#x4F2A;&#x4EE3;&#x7801;&#x4E2D;&#x7684;&#x9012;&#x5F52;&#x7684;&#x601D;&#x60F3;&#x5176;&#x5B9E;&#x53EF;&#x4EE5;&#x7528;&#x4E00;&#x53E5;&#x8BDD;&#x6765;&#x603B;&#x7ED3;&#xFF1A;&#x65E2;&#x7136;&#x957F;&#x7684;&#x540E;&#x7F00;&#x5B57;&#x7B26;&#x5728;&#x5DF2;&#x5339;&#x914D;&#x7684;&#x5B57;&#x7B26;&#x4E2D;&#x627E;&#x4E0D;&#x5230;&#x5BF9;&#x5E94;&#x7684;&#x524D;&#x7F00;&#x5B57;&#x7B26;&#xFF0C;&#x90A3;&#x4E48;&#x6211;&#x4E0D;&#x65AD;&#x7F29;&#x77ED;&#x540E;&#x7F00;&#x5927;&#x5C0F;&#xFF0C;&#x5C31;&#x6709;&#x53EF;&#x80FD;&#x5728;&#x5DF2;&#x5339;&#x914D;&#x7684;&#x5B57;&#x7B26;&#x4E2D;&#x627E;&#x5230;&#x5BF9;&#x5E94;&#x7684;&#x524D;&#x7F00;&#x4E86;&#xFF0C;&#x800C;&#x7F29;&#x77ED;&#x540E;&#x7F00;&#x5B57;&#x7B26;&#x6700;&#x9AD8;&#x6548;&#x7684;&#x529E;&#x6CD5;&#x5C31;&#x662F;&#x5229;&#x7528;&#x5931;&#x914D;&#xFF08;&#x4EE5;&#x7279;&#x5F81;&#x4E32;&#x540C;&#x65F6;&#x4F5C;&#x4E3A;&#x76EE;&#x6807;&#x4E32;&#x548C;&#x7279;&#x5F81;&#x4E32;&#xFF09;&#x627E;&#x5230;&#x5176;&#x5BF9;&#x5E94;&#x7684;f&#x503C;&#xFF08;&#x5F53;&#x7136;&#x4F60;&#x4E5F;&#x53EF;&#x4EE5;&#x4E00;&#x4E2A;&#x5B57;&#x7B26;&#x4E00;&#x4E2A;&#x5B57;&#x7B26;&#x7684;&#x7F29;&#x51CF;&#xFF0C;&#x8FD9;&#x6837;&#x7684;&#x8BDD;&#x6548;&#x7387;&#x5C31;&#x4F1A;&#x975E;&#x5E38;&#x4F4E;&#x4E86;&#xFF09;&#x3002;</font></p>
+<p>&#x2003;&#x2003;&#x6211;&#x4EEC;&#x4ECD;&#x4EE5;&#x4E4B;&#x524D;&#x6240;&#x8FF0;&#x7684;&#x7279;&#x5F81;&#x4E32;&#x4E3A;&#x4F8B;&#xFF0C;&#x5176;&#x6700;&#x7EC8;&#x7684;f&#x503C;&#x8BA1;&#x7B97;&#x7ED3;&#x679C;&#x5982;&#x4E0B;&#x8868;&#xFF1A;</p>
+<table>
+<thead>
+<tr>
+<th style="text-align:center">k</th>
+<th style="text-align:center">1</th>
+<th style="text-align:center">2</th>
+<th style="text-align:center">3</th>
+<th style="text-align:center">4</th>
+<th style="text-align:center">5</th>
+<th style="text-align:center">6</th>
+<th style="text-align:center">7</th>
+<th style="text-align:center">8</th>
+<th style="text-align:center">9</th>
+<th style="text-align:center">10</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:center">Pattern[k]</td>
+<td style="text-align:center">$a$</td>
+<td style="text-align:center">$b$</td>
+<td style="text-align:center">$c$</td>
+<td style="text-align:center">$a$</td>
+<td style="text-align:center">$b$</td>
+<td style="text-align:center">$c$</td>
+<td style="text-align:center">$a$</td>
+<td style="text-align:center">$c$</td>
+<td style="text-align:center">$a$</td>
+<td style="text-align:center">$b$</td>
+</tr>
+<tr>
+<td style="text-align:center">f[k]</td>
+<td style="text-align:center">0</td>
+<td style="text-align:center">1</td>
+<td style="text-align:center">1</td>
+<td style="text-align:center">1</td>
+<td style="text-align:center">2</td>
+<td style="text-align:center">3</td>
+<td style="text-align:center">4</td>
+<td style="text-align:center">5</td>
+<td style="text-align:center">1</td>
+<td style="text-align:center">2</td>
+</tr>
+</tbody>
+</table>
+<p>&#x2003;&#x2003;&#x8868;&#x4E2D;&#x7D22;&#x5F15;&#x53F7;5&#x3001;6&#x3001;7&#x3001;8&#x7684;&#x5B57;&#x7B26;&#x5176;f&#x503C;&#x8BA1;&#x7B97;&#x90FD;&#x6BD4;&#x8F83;&#x7B80;&#x5355;&#xFF0C;&#x56E0;&#x4E3A;&#x5B83;&#x4EEC;&#x90FD;&#x6EE1;&#x8DB3;&#x5F0F;&#xFF08;2 - 6&#xFF09;&#x7684;&#x7B2C;&#x4E00;&#x4E2A;&#x6761;&#x4EF6;&#xFF0C;&#x6240;&#x4EE5;&#x76F4;&#x63A5;&#x5728;&#x524D;&#x4E00;&#x4E2A;&#x5B57;&#x7B26;&#x7684;f&#x503C;&#x4E0A;&#x9012;&#x589E;1&#x5C31;&#x53EF;&#x4EE5;&#x4E86;&#x3002;&#x8FD9;&#x91CC;&#x4E3B;&#x8981;&#x8BB2;&#x4E00;&#x4E0B;&#x7D22;&#x5F15;&#x53F7;&#x4E3A;9&#x7684;&#x5B57;&#x7B26;&#x4E32;&#xFF0C;&#x5B83;&#x7684;f&#x503C;&#x6CA1;&#x6709;&#x5EF6;&#x7EED;&#x4E4B;&#x524D;&#x7684;&#x9012;&#x589E;&#x8D8B;&#x52BF;&#x3002;</p>
+<p>&#x2003;&#x2003;&#x5982;&#x524D;&#x6240;&#x8FF0;&#xFF0C;&#x8981;&#x8BA1;&#x7B97;$f[9] = f[8 + 1]$&#xFF0C;&#x5148;&#x5224;&#x65AD;$pattern[8] = c$&#x548C;$pattern[ \underbrace{f[8]}_{=5} ] = pattern[5] = b$&#x662F;&#x5426;&#x76F8;&#x540C;&#xFF0C;&#x5F88;&#x660E;&#x663E;&#x4E24;&#x8005;&#x4E0D;&#x76F8;&#x540C;&#xFF0C;&#x4E5F;&#x5C31;&#x662F;&#x8BF4;&#x4EE5;Pattern&#x4E3A;&#x76EE;&#x6807;&#x4E32;&#xFF0C;&#x4EE5;&#x6ED1;&#x52A8;&#x540E;&#x7684;Pattern&#x4E3A;&#x7279;&#x5F81;&#x4E32;&#x8FDB;&#x884C;&#x5339;&#x914D;&#xFF0C;&#x5728;&#x7279;&#x5F81;&#x4E32;&#x7D22;&#x5F15;&#x53F7;&#x4E3A;5&#x7684;&#x5B57;&#x7B26;$b$&#x5904;&#x53D1;&#x751F;&#x4E86;&#x5931;&#x914D;&#xFF0C;&#x6240;&#x4EE5;$p_4&#x2026;p_8 = abcac$&#x4E0D;&#x53EF;&#x80FD;&#x6210;&#x4E3A;$p_9 = a$&#x7684;&#x6700;&#x5927;&#x540E;&#x7F00;&#xFF08;&#x8868;&#x4E2D;&#x84DD;&#x8272;&#x5B57;&#x7B26;&#xFF09;&#xFF0C;&#x5982;&#x4E0B;&#x6240;&#x793A;&#xFF1A;</p>
+<table>
+<thead>
+<tr>
+<th style="text-align:center">k</th>
+<th style="text-align:center">1</th>
+<th style="text-align:center">2</th>
+<th style="text-align:center">3</th>
+<th style="text-align:center">4</th>
+<th style="text-align:center">5</th>
+<th style="text-align:center">6</th>
+<th style="text-align:center">7</th>
+<th style="text-align:center">8</th>
+<th style="text-align:center">9</th>
+<th style="text-align:center">10</th>
+<th style="text-align:center"></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:center">Pattern(Text)</td>
+<td style="text-align:center">$a$</td>
+<td style="text-align:center">$b$</td>
+<td style="text-align:center">$c$</td>
+<td style="text-align:center">$\color{blue}{a}$</td>
+<td style="text-align:center">$\color{blue}{b}$</td>
+<td style="text-align:center">$\color{blue}{c}$</td>
+<td style="text-align:center">$\color{blue}{a}$</td>
+<td style="text-align:center">$\color{blue}{c}$</td>
+<td style="text-align:center">$a$</td>
+<td style="text-align:center">$b$</td>
+<td style="text-align:center"></td>
+</tr>
+<tr>
+<td style="text-align:center">Pattern</td>
+<td style="text-align:center"></td>
+<td style="text-align:center"></td>
+<td style="text-align:center"></td>
+<td style="text-align:center">$\color{green}{a}$</td>
+<td style="text-align:center">$\color{green}{b}$</td>
+<td style="text-align:center">$\color{green}{c}$</td>
+<td style="text-align:center">$\color{green}{a}$</td>
+<td style="text-align:center">$\color{red}{b}$</td>
+<td style="text-align:center">$c$</td>
+<td style="text-align:center">$a$</td>
+<td style="text-align:center">&#xB7;&#xB7;&#xB7;</td>
+</tr>
+</tbody>
+</table>
+<p>&#x2003;&#x2003;&#x5982;&#x524D;&#x6240;&#x8FF0;&#xFF0C;&#x65E2;&#x7136;&#x627E;&#x4E0D;&#x5230;&#x957F;&#x5EA6;&#x4E3A;5&#x7684;&#x524D;&#x7F00;&#xFF0C;&#x6211;&#x4EEC;&#x5C31;&#x5229;&#x7528;&#x5931;&#x914D;&#xFF08;&#x7EA2;&#x8272;&#x5B57;&#x7B26;$p_5 = b$&#x5904;&#xFF09;&#x627E;&#x5230;&#x5176;f&#x503C;&#x4ECE;&#x800C;&#x7F29;&#x51CF;&#x8981;&#x627E;&#x5BFB;&#x7684;&#x524D;&#x7F00;&#x7684;&#x957F;&#x5EA6;&#x3002;&#x636E;&#x4E0A;&#x9762;&#x7684;f&#x503C;&#x8868;&#x53EF;&#x77E5;$f[5] = 2$&#xFF0C;&#x8FD9;&#x4E2A;&#x65F6;&#x5019;&#x540E;&#x7F00;&#x5DF2;&#x7ECF;&#x7F29;&#x51CF;&#x5230;&#x4E86;2&#x4E2A;&#x5B57;&#x7B26;&#xFF0C;&#x518D;&#x6B21;&#x6BD4;&#x8F83;$pattern[8] = c$&#x548C;$pattern[  f[ \underbrace{f[8]}_{=5}] ]  = pattern[ \underbrace{f[5]}_{=2}] = pattern[2] = b$&#x662F;&#x5426;&#x76F8;&#x540C;&#xFF0C;&#x5982;&#x4E0B;&#x56FE;&#x6240;&#x793A;&#xFF1A;</p>
+<table>
+<thead>
+<tr>
+<th style="text-align:center">k</th>
+<th style="text-align:center">1</th>
+<th style="text-align:center">2</th>
+<th style="text-align:center">3</th>
+<th style="text-align:center">4</th>
+<th style="text-align:center">5</th>
+<th style="text-align:center">6</th>
+<th style="text-align:center">7</th>
+<th style="text-align:center">8</th>
+<th style="text-align:center">9</th>
+<th style="text-align:center">10</th>
+<th style="text-align:center"></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:center">Pattern(Text)</td>
+<td style="text-align:center">$a$</td>
+<td style="text-align:center">$b$</td>
+<td style="text-align:center">$c$</td>
+<td style="text-align:center">$a$</td>
+<td style="text-align:center">$b$</td>
+<td style="text-align:center">$c$</td>
+<td style="text-align:center">$\color{blue}{a}$</td>
+<td style="text-align:center">$\color{blue}{c}$</td>
+<td style="text-align:center">$a$</td>
+<td style="text-align:center">$b$</td>
+<td style="text-align:center"></td>
+</tr>
+<tr>
+<td style="text-align:center">Pattern</td>
+<td style="text-align:center"></td>
+<td style="text-align:center"></td>
+<td style="text-align:center"></td>
+<td style="text-align:center"></td>
+<td style="text-align:center"></td>
+<td style="text-align:center"></td>
+<td style="text-align:center">$\color{green}{a}$</td>
+<td style="text-align:center">$\color{red}{b}$</td>
+<td style="text-align:center">$c$</td>
+<td style="text-align:center">$a$</td>
+<td style="text-align:center">&#xB7;&#xB7;&#xB7;</td>
+</tr>
+</tbody>
+</table>
+<p>&#x2003;&#x2003;&#x5BF9;&#x6BD4;&#x540E;&#x53EF;&#x77E5;&#xFF0C;$p_7p_8 = ac$&#x4ECD;&#x7136;&#x627E;&#x4E0D;&#x5230;&#x5BF9;&#x5E94;&#x7684;&#x524D;&#x7F00;&#x3002;&#x6211;&#x4EEC;&#x53EA;&#x597D;&#x91CD;&#x590D;&#x521A;&#x624D;&#x7684;&#x64CD;&#x4F5C;&#xFF0C;&#x5F97;&#x5230;$f[[f5]] = f[2] = 1$&#xFF0C;&#x8FD9;&#x4E2A;&#x65F6;&#x5019;&#x540E;&#x7F00;&#x5DF2;&#x7ECF;&#x7F29;&#x51CF;&#x5230;&#x4E86;&#x4EC5;&#x4EC5;1&#x4E2A;&#x5B57;&#x7B26;&#xFF0C;&#x518D;&#x6B21;&#x6BD4;&#x8F83;$pattern[8] = c$&#x548C;$pattern[f[f[\underbrace{f[8]}_{=5}]] = pattern[f[\underbrace{f[5]}_{=2}]] = pattern[\underbrace{f[2]}_{=1}] = pattern[1] = a$&#x662F;&#x5426;&#x76F8;&#x540C;&#xFF0C;&#x5982;&#x4E0B;&#x56FE;&#x6240;&#x793A;&#xFF1A;</p>
+<table>
+<thead>
+<tr>
+<th style="text-align:center">k</th>
+<th style="text-align:center">1</th>
+<th style="text-align:center">2</th>
+<th style="text-align:center">3</th>
+<th style="text-align:center">4</th>
+<th style="text-align:center">5</th>
+<th style="text-align:center">6</th>
+<th style="text-align:center">7</th>
+<th style="text-align:center">8</th>
+<th style="text-align:center">9</th>
+<th style="text-align:center">10</th>
+<th style="text-align:center"></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:center">Pattern(Text)</td>
+<td style="text-align:center">$a$</td>
+<td style="text-align:center">$b$</td>
+<td style="text-align:center">$c$</td>
+<td style="text-align:center">$a$</td>
+<td style="text-align:center">$b$</td>
+<td style="text-align:center">$c$</td>
+<td style="text-align:center">$a$</td>
+<td style="text-align:center">$\color{red}{c}$</td>
+<td style="text-align:center">$a$</td>
+<td style="text-align:center">$b$</td>
+<td style="text-align:center"></td>
+</tr>
+<tr>
+<td style="text-align:center">Pattern</td>
+<td style="text-align:center"></td>
+<td style="text-align:center"></td>
+<td style="text-align:center"></td>
+<td style="text-align:center"></td>
+<td style="text-align:center"></td>
+<td style="text-align:center"></td>
+<td style="text-align:center"></td>
+<td style="text-align:center">$\color{red}{a}$</td>
+<td style="text-align:center">$b$</td>
+<td style="text-align:center">$c$</td>
+<td style="text-align:center">&#xB7;&#xB7;&#xB7;</td>
+</tr>
+</tbody>
+</table>
+<p>&#x2003;&#x2003;&#x5BF9;&#x6BD4;&#x540E;&#x53EF;&#x77E5;&#xFF0C;$p_8 = c$&#x4ECD;&#x7136;&#x627E;&#x4E0D;&#x5230;&#x5BF9;&#x5E94;&#x7684;&#x524D;&#x7F00;&#xFF0C;&#x518D;&#x6B21;&#x91CD;&#x590D;&#x64CD;&#x4F5C;&#xFF0C;&#x5F97;&#x5230;$f[1] = 0$&#xFF0C;&#x8FD9;&#x4E2A;&#x65F6;&#x5019;&#x8868;&#x793A;&#x524D;&#x9762;&#x5DF2;&#x7ECF;&#x5339;&#x914D;&#x7684;&#x5B57;&#x7B26;&#x8017;&#x5C3D;&#x4E86;&#xFF0C;&#x56E0;&#x6B64;f&#x503C;&#x8BA1;&#x7B97;&#x7ED3;&#x675F;&#xFF0C;&#x5E76;&#x4EE5;0 + 1 = 1&#x4F5C;&#x4E3A;&#x8BE5;&#x5B57;&#x7B26;&#x7684;f&#x503C;&#xFF0C;&#x5373;&#x6709;$f[9] = 0 + 1 = 1$&#x3002;</p>
+<h5 id="2-4-3-6-Next&#x6570;&#x7EC4;&#x8BA1;&#x7B97;"><a href="#2-4-3-6-Next&#x6570;&#x7EC4;&#x8BA1;&#x7B97;" class="headerlink" title="2.4.3.6 Next&#x6570;&#x7EC4;&#x8BA1;&#x7B97;"></a>2.4.3.6 Next&#x6570;&#x7EC4;&#x8BA1;&#x7B97;</h5><p>&#x2003;&#x2003;&#x6C42;&#x51FA;f&#x503C;&#x6570;&#x7EC4;&#x540E;&#xFF0C;&#x53EA;&#x9700;&#x8981;&#x505A;&#x4E00;&#x70B9;&#x5C0F;&#x5C0F;&#x7684;&#x5904;&#x7406;&#x5C31;&#x80FD;&#x53D8;&#x6210;&#x6211;&#x4EEC;&#x7684;Next&#x6570;&#x7EC4;&#x4E86;&#x3002;&#x6211;&#x4EEC;&#x5148;&#x7ED9;&#x51FA;Next&#x6570;&#x7EC4;&#x7684;&#x6C42;&#x89E3;&#x8868;&#x8FBE;&#x5F0F;&#xFF0C;&#x5982;&#x4E0B;&#x6240;&#x793A;&#xFF1A;</p>
+<p>$$<br>next[s] = \begin{cases}<br>f[s], \quad if \ pattern[s] \ \neq \ pattern[f[s]] \\\\<br>\\\\<br>next[f[s]], \quad if \ pattern[s] \ = \ pattern[f[s]] \\\\<br>\end{cases}<br>\tag{2 - 7}<br>$$</p>
+<p>&#x2003;&#x2003;&#x6B63;&#x5982;&#x6211;&#x4EEC;&#x524D;&#x9762;&#x6240;&#x8FF0;&#xFF0C;Next&#x6570;&#x7EC4;&#x7684;&#x6C42;&#x89E3;&#x4E5F;&#x7528;&#x5230;&#x4E86;&#x9012;&#x5F52;&#x7684;&#x601D;&#x60F3;&#xFF0C;&#x53EA;&#x662F;&#x5B83;&#x5BF9;&#x5E94;&#x7684;&#x6761;&#x4EF6;&#x548C;f&#x503C;&#x7684;&#x6C42;&#x89E3;&#x521A;&#x597D;&#x76F8;&#x53CD;&#xFF0C;&#x8FD9;&#x70B9;&#x662F;&#x6700;&#x8BA9;&#x4EBA;&#x8D39;&#x89E3;&#x7684;&#x3002;&#x4E0B;&#x9762;&#x6211;&#x4EEC;&#x5C31;&#x7ED3;&#x5408;&#x4F8B;&#x5B50;&#x6765;&#x8BB2;&#xFF0C;&#x5148;&#x7ED9;&#x51FA;&#x6700;&#x7EC8;&#x7684;f&#x503C;&#x53CA;next&#x503C;&#x8868;&#x5982;&#x4E0B;&#xFF1A;</p>
+<table>
+<thead>
+<tr>
+<th style="text-align:center">k</th>
+<th style="text-align:center">1</th>
+<th style="text-align:center">2</th>
+<th style="text-align:center">3</th>
+<th style="text-align:center">4</th>
+<th style="text-align:center">5</th>
+<th style="text-align:center">6</th>
+<th style="text-align:center">7</th>
+<th style="text-align:center">8</th>
+<th style="text-align:center">9</th>
+<th style="text-align:center">10</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:center">Pattern[k]</td>
+<td style="text-align:center">$a$</td>
+<td style="text-align:center">$b$</td>
+<td style="text-align:center">$c$</td>
+<td style="text-align:center">$a$</td>
+<td style="text-align:center">$b$</td>
+<td style="text-align:center">$c$</td>
+<td style="text-align:center">$a$</td>
+<td style="text-align:center">$c$</td>
+<td style="text-align:center">$a$</td>
+<td style="text-align:center">$b$</td>
+</tr>
+<tr>
+<td style="text-align:center">f[k]</td>
+<td style="text-align:center">0</td>
+<td style="text-align:center">1</td>
+<td style="text-align:center">1</td>
+<td style="text-align:center">1</td>
+<td style="text-align:center">2</td>
+<td style="text-align:center">3</td>
+<td style="text-align:center">4</td>
+<td style="text-align:center">5</td>
+<td style="text-align:center">1</td>
+<td style="text-align:center">2</td>
+</tr>
+<tr>
+<td style="text-align:center">next[k]</td>
+<td style="text-align:center">0</td>
+<td style="text-align:center">1</td>
+<td style="text-align:center">1</td>
+<td style="text-align:center">$\color{red}{0}$</td>
+<td style="text-align:center">$\color{red}{1}$</td>
+<td style="text-align:center">$\color{red}{1}$</td>
+<td style="text-align:center">$\color{red}{0}$</td>
+<td style="text-align:center">5</td>
+<td style="text-align:center">$\color{red}{0}$</td>
+<td style="text-align:center">$\color{red}{1}$</td>
+</tr>
+</tbody>
+</table>
+<p>&#x2003;&#x2003;&#x8868;&#x4E2D;&#xFF0C;next&#x503C;&#x4E0E;f&#x503C;&#x4E0D;&#x540C;&#x7684;&#x90E8;&#x5206;&#x5747;&#x5DF2;&#x6807;&#x7EA2;&#x3002;&#x6211;&#x4EEC;&#x5148;&#x6765;&#x770B;&#x770B;&#x7D22;&#x5F15;&#x53F7;&#x4E3A;4&#x7684;&#x5B57;&#x7B26;&#x4E3A;&#x4EC0;&#x4E48;next&#x503C;&#x53D8;&#x6210;&#x4E86;0&#xFF0C;&#x5047;&#x5B9A;&#x8BE5;&#x7279;&#x5F81;&#x4E32;&#x7D22;&#x5F15;&#x53F7;&#x4E3A;4&#x8FD9;&#x4E2A;&#x5B57;&#x7B26;&#x5904;&#x53D1;&#x751F;&#x4E86;&#x5931;&#x914D;&#xFF0C;&#x5982;&#x4E0B;&#x6240;&#x793A;&#xFF1A;</p>
+<table>
+<thead>
+<tr>
+<th style="text-align:center">k</th>
+<th style="text-align:center">1</th>
+<th style="text-align:center">2</th>
+<th style="text-align:center">3</th>
+<th style="text-align:center">4</th>
+<th style="text-align:center">5</th>
+<th style="text-align:center">6</th>
+<th style="text-align:center">7</th>
+<th style="text-align:center">8</th>
+<th style="text-align:center">9</th>
+<th style="text-align:center">10</th>
+<th style="text-align:center">11</th>
+<th style="text-align:center">12</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:center">Text</td>
+<td style="text-align:center">$a$</td>
+<td style="text-align:center">$b$</td>
+<td style="text-align:center">$c$</td>
+<td style="text-align:center">$b$</td>
+<td style="text-align:center">$b$</td>
+<td style="text-align:center">$c$</td>
+<td style="text-align:center">$a$</td>
+<td style="text-align:center">$c$</td>
+<td style="text-align:center">$a$</td>
+<td style="text-align:center">$b$</td>
+<td style="text-align:center">$a$</td>
+<td style="text-align:center">$b$</td>
+</tr>
+<tr>
+<td style="text-align:center">Pattern</td>
+<td style="text-align:center">$\color{green}{a}$</td>
+<td style="text-align:center">$\color{green}{b}$</td>
+<td style="text-align:center">$\color{green}{c}$</td>
+<td style="text-align:center">$\color{red}{a}$</td>
+<td style="text-align:center">$b$</td>
+<td style="text-align:center">$c$</td>
+<td style="text-align:center">$a$</td>
+<td style="text-align:center">$c$</td>
+<td style="text-align:center">$a$</td>
+<td style="text-align:center">$b$</td>
+<td style="text-align:center"></td>
+<td style="text-align:center"></td>
+</tr>
+</tbody>
+</table>
+<p>&#x2003;&#x2003;&#x5931;&#x914D;&#x540E;&#xFF0C;&#x6211;&#x4EEC;&#x53D6;&#x5F97;&#x5176;f&#x503C;$f[4] = 1$&#xFF0C;&#x8BE5;&#x503C;&#x5BF9;&#x5E94;&#x7684;&#x7279;&#x5F81;&#x4E32;&#x5B57;&#x7B26;&#x4E3A;$p_1 = a$&#xFF0C;&#x8FD9;&#x4E2A;&#x5B57;&#x7B26;&#x548C;&#x6211;&#x4EEC;&#x7684;&#x5931;&#x914D;&#x5B57;&#x7B26;&#x662F;&#x76F8;&#x540C;&#x7684;&#xFF0C;&#x5373;&#x6709;&#xFF1A;$p_1 = p_4 = a$&#xFF0C;&#x65E2;&#x7136;$p_4$&#x5728;&#x8FD9;&#x91CC;&#x53D1;&#x751F;&#x4E86;&#x5931;&#x914D;&#xFF0C;&#x6211;&#x4EEC;&#x6839;&#x636E;&#x6C42;&#x5F97;&#x7684;f&#x503C;&#x79FB;&#x52A8;&#x7279;&#x5F81;&#x4E32;($s - f[s] = 4 - 1 = 3$&#x4E2A;&#x5B57;&#x7B26;)&#x540E;&#x518D;&#x6B21;&#x8FDB;&#x884C;&#x5339;&#x914D;&#x65F6;&#xFF0C;&#x4E5F;&#x5FC5;&#x7136;&#x4F1A;&#x53D1;&#x751F;&#x5931;&#x914D;&#xFF0C;&#x5982;&#x4E0B;&#x6240;&#x793A;&#xFF1A;</p>
+<table>
+<thead>
+<tr>
+<th style="text-align:center">k</th>
+<th style="text-align:center">1</th>
+<th style="text-align:center">2</th>
+<th style="text-align:center">3</th>
+<th style="text-align:center">4</th>
+<th style="text-align:center">5</th>
+<th style="text-align:center">6</th>
+<th style="text-align:center">7</th>
+<th style="text-align:center">8</th>
+<th style="text-align:center">9</th>
+<th style="text-align:center">10</th>
+<th style="text-align:center">11</th>
+<th style="text-align:center">12</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:center">Text</td>
+<td style="text-align:center">$a$</td>
+<td style="text-align:center">$b$</td>
+<td style="text-align:center">$c$</td>
+<td style="text-align:center">$b$</td>
+<td style="text-align:center">$b$</td>
+<td style="text-align:center">$c$</td>
+<td style="text-align:center">$a$</td>
+<td style="text-align:center">$c$</td>
+<td style="text-align:center">$a$</td>
+<td style="text-align:center">$b$</td>
+<td style="text-align:center">$a$</td>
+<td style="text-align:center">$b$</td>
+</tr>
+<tr>
+<td style="text-align:center">Pattern</td>
+<td style="text-align:center">$\color{green}{a}$</td>
+<td style="text-align:center">$\color{green}{b}$</td>
+<td style="text-align:center">$\color{green}{c}$</td>
+<td style="text-align:center">$\color{red}{a}$</td>
+<td style="text-align:center">$b$</td>
+<td style="text-align:center">$c$</td>
+<td style="text-align:center">$a$</td>
+<td style="text-align:center">$c$</td>
+<td style="text-align:center">$a$</td>
+<td style="text-align:center">$b$</td>
+<td style="text-align:center"></td>
+<td style="text-align:center"></td>
+</tr>
+<tr>
+<td style="text-align:center">Pattern(Shifted)</td>
+<td style="text-align:center"></td>
+<td style="text-align:center"></td>
+<td style="text-align:center"></td>
+<td style="text-align:center">$\color{red}{a}$</td>
+<td style="text-align:center">$b$</td>
+<td style="text-align:center">$c$</td>
+<td style="text-align:center">$a$</td>
+<td style="text-align:center">$b$</td>
+<td style="text-align:center">$c$</td>
+<td style="text-align:center">$a$</td>
+<td style="text-align:center">$c$</td>
+<td style="text-align:center">$a$</td>
+</tr>
+</tbody>
+</table>
+<p>&#x2003;&#x2003;&#x65E2;&#x7136;&#x53D1;&#x751F;&#x4E86;&#x5931;&#x914D;&#xFF0C;&#x5FC5;&#x7136;&#x4F1A;&#x6709;&#x8DF3;&#x8F6C;&#x64CD;&#x4F5C;&#xFF0C;&#x5982;&#x679C;&#x6211;&#x4EEC;&#x4E0D;&#x5BF9;&#x8FD9;&#x4E2A;f&#x503C;&#x8FDB;&#x4E00;&#x6B65;&#x5904;&#x7406;&#xFF0C;&#x5339;&#x914D;&#x7684;&#x65F6;&#x5019;&#x5C31;&#x907F;&#x4E0D;&#x5F00;&#x8FD9;&#x4E00;&#x6B65;&#x4E0D;&#x5FC5;&#x8981;&#x7684;&#x64CD;&#x4F5C;&#xFF0C;&#x800C;&#x5904;&#x7406;&#x540E;&#x6211;&#x4EEC;&#x53EF;&#x4EE5;&#x76F4;&#x63A5;&#x8DF3;&#x8FC7;4&#x4E2A;&#x5B57;&#x7B26;&#xFF0C;&#x7136;&#x540E;&#x5F00;&#x59CB;&#x4E0B;&#x4E00;&#x8F6E;&#x7684;&#x5339;&#x914D;&#x3002;&#x8FD9;&#x5C31;&#x662F;&#x4E3A;&#x4EC0;&#x4E48;&#x6211;&#x4EEC;&#x7B97;&#x51FA;&#x4E86;f&#x503C;&#xFF0C;&#x8FD8;&#x8981;&#x8FDB;&#x4E00;&#x6B65;&#x7B97;next&#x503C;&#x7684;&#x539F;&#x56E0;&#x3002;&#x5982;&#x679C;&#x4F60;&#x4E8B;&#x5148;&#x4E86;&#x89E3;&#x4E00;&#x4E9B;NFA&#x548C;DFA&#x7684;&#x77E5;&#x8BC6;&#x7684;&#x8BDD;&#xFF0C;f&#x503C;&#x7684;&#x4F5C;&#x7528;&#x5C31;&#x6709;&#x70B9;&#x7C7B;&#x4F3C;&#x6211;&#x4EEC;&#x7684;NFA&#xFF0C;&#x800C;next&#x503C;&#x5219;&#x662F;DFA&#xFF0C;&#x60F3;&#x8FDB;&#x4E00;&#x6B65;&#x4E86;&#x89E3;&#x53EF;&#x53C2;&#x8003;<a href="#nfa_dfa_compare">2.4.3.7&#x8282;</a>&#x6240;&#x8FF0;&#x3002;</p>
+<p>&#x2003;&#x2003;&#x90A3;&#x8FD9;&#x91CC;&#x8DF3;&#x8FC7;4&#x4E2A;&#x5B57;&#x7B26;&#x662F;&#x600E;&#x4E48;&#x5F97;&#x51FA;&#x6765;&#x7684;&#x5462;&#xFF1F;&#x9996;&#x5148;&#x7279;&#x5F81;&#x4E32;&#x7B2C;&#x4E00;&#x4E2A;&#x5B57;&#x7B26;&#x5904;&#x53D1;&#x751F;&#x5931;&#x914D;&#x540E;&#xFF0C;&#x5176;f&#x503C;&#x4E3A;$f[1] = 0$&#xFF0C;&#x56E0;&#x6B64;&#x6211;&#x4EEC;&#x8981;&#x8DF3;&#x8FC7;$s - f[s] = 1 - 0 = 1$&#x4E2A;&#x5B57;&#x7B26;&#xFF0C;&#x518D;&#x5F00;&#x59CB;&#x4E0B;&#x4E00;&#x8F6E;&#x65B0;&#x7684;&#x5339;&#x914D;&#x3002;&#x518D;&#x7ED3;&#x5408;&#x4E4B;&#x524D;&#x8DF3;&#x8FC7;&#x7684;3&#x4E2A;&#x5B57;&#x7B26;&#xFF0C;&#x4E00;&#x5171;&#x5C31;&#x662F;4&#x4E2A;&#xFF01;</p>
+<p>&#x2003;&#x2003;&#x7ED3;&#x5408;&#x5F0F;&#xFF08;2-7&#xFF09;&#x7684;&#x7B2C;&#x4E8C;&#x6761;&#x6765;&#x770B;&#xFF0C;$next[4] = next[f[4]] = next[1] = 0$&#x3002;&#x7D22;&#x5F15;&#x53F7;7&#x3001;9&#x7684;&#x5B57;&#x7B26;&#x5176;next&#x503C;&#x4E3A;0&#x7684;&#x539F;&#x56E0;&#x4E5F;&#x662F;&#x4E00;&#x6837;&#x7684;&#xFF0C;&#x5927;&#x5BB6;&#x53EF;&#x4EE5;&#x81EA;&#x5DF1;&#x63A8;&#x5BFC;&#x4E00;&#x4E0B;&#x3002;</p>
+<p>&#x2003;&#x2003;&#x6211;&#x4EEC;&#x518D;&#x6765;&#x770B;&#x7D22;&#x5F15;&#x53F7;&#x4E3A;8&#x7684;&#x7279;&#x5F81;&#x4E32;&#x5B57;&#x7B26;$p_8 = b$&#xFF0C;&#x5047;&#x5B9A;&#x5728;&#x8BE5;&#x5B57;&#x7B26;&#x5904;&#x53D1;&#x751F;&#x4E86;&#x5931;&#x914D;&#xFF0C;&#x5982;&#x4E0B;&#x6240;&#x793A;&#xFF1A;</p>
+<table>
+<thead>
+<tr>
+<th style="text-align:center">k</th>
+<th style="text-align:center">1</th>
+<th style="text-align:center">2</th>
+<th style="text-align:center">3</th>
+<th style="text-align:center">4</th>
+<th style="text-align:center">5</th>
+<th style="text-align:center">6</th>
+<th style="text-align:center">7</th>
+<th style="text-align:center">8</th>
+<th style="text-align:center">9</th>
+<th style="text-align:center">10</th>
+<th style="text-align:center">11</th>
+<th style="text-align:center">12</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:center">Text</td>
+<td style="text-align:center">$a$</td>
+<td style="text-align:center">$b$</td>
+<td style="text-align:center">$c$</td>
+<td style="text-align:center">$a$</td>
+<td style="text-align:center">$b$</td>
+<td style="text-align:center">$c$</td>
+<td style="text-align:center">$a$</td>
+<td style="text-align:center">$a$</td>
+<td style="text-align:center">$a$</td>
+<td style="text-align:center">$b$</td>
+<td style="text-align:center">$a$</td>
+<td style="text-align:center">$b$</td>
+</tr>
+<tr>
+<td style="text-align:center">Pattern</td>
+<td style="text-align:center">$\color{green}{a}$</td>
+<td style="text-align:center">$\color{green}{b}$</td>
+<td style="text-align:center">$\color{green}{c}$</td>
+<td style="text-align:center">$\color{green}{a}$</td>
+<td style="text-align:center">$\color{green}{b}$</td>
+<td style="text-align:center">$\color{green}{c}$</td>
+<td style="text-align:center">$\color{green}{a}$</td>
+<td style="text-align:center">$\color{red}{c}$</td>
+<td style="text-align:center">$a$</td>
+<td style="text-align:center">$b$</td>
+<td style="text-align:center"></td>
+<td style="text-align:center"></td>
+</tr>
+</tbody>
+</table>
+<p>&#x2003;&#x2003;&#x5931;&#x914D;&#x540E;&#xFF0C;&#x6211;&#x4EEC;&#x53D6;&#x5F97;&#x5176;&#x5BF9;&#x5E94;&#x7684;f&#x503C;$f[8] = 5$&#xFF0C;&#x8BE5;&#x503C;&#x5BF9;&#x5E94;&#x7684;&#x7279;&#x5F81;&#x4E32;&#x5B57;&#x7B26;&#x4E3A;$pattern[f[8]] = pattern[5] = b$&#xFF0C;&#x8FD9;&#x4E2A;&#x5B57;&#x7B26;&#x548C;&#x6211;&#x4EEC;&#x7684;&#x5931;&#x914D;&#x5B57;&#x7B26;&#x662F;&#x4E0D;&#x76F8;&#x540C;&#x7684;&#xFF0C;&#x5373;&#x6709;&#xFF1A;$p_5 \neq p_8$&#xFF0C;<strong>&#x65E2;&#x7136;&#x8FD9;&#x4E2A;&#x5B57;&#x7B26;&#x4E0E;&#x53D1;&#x751F;&#x5931;&#x914D;&#x7684;&#x5B57;&#x7B26;&#x4E0D;&#x76F8;&#x540C;&#xFF0C;&#x90A3;&#x4E48;&#x8DF3;&#x8F6C;&#x540E;&#x4E0B;&#x4E00;&#x8F6E;&#x5339;&#x914D;&#x65F6;&#xFF0C;&#x4E0A;&#x4E00;&#x8F6E;&#x5931;&#x914D;&#x7684;&#x5730;&#x65B9;&#x5C31;&#x6709;&#x53EF;&#x80FD;&#x4E0D;&#x4F1A;&#x518D;&#x5931;&#x914D;&#xFF0C;&#x56E0;&#x6B64;&#x6211;&#x4EEC;&#x5C31;&#x4F7F;&#x7528;&#x8FD9;&#x4E2A;&#x503C;&#x4F5C;&#x4E3A;next&#x503C;&#xFF0C;&#x8FD9;&#x5C31;&#x662F;&#x5F0F;&#xFF08;2-7&#xFF09;&#x7684;&#x7B2C;&#x4E00;&#x4E2A;&#x6761;&#x4EF6;&#x7684;&#x6765;&#x6E90;&#xFF01;</strong></p>
+<p>&#x2003;&#x2003;&#x5F53;&#x7136;&#x6211;&#x4EEC;&#x4E3E;&#x5F97;&#x8FD9;&#x4E2A;&#x4F8B;&#x5B50;&#x91CC;&#x9762;&#xFF0C;&#x8DF3;&#x8F6C;&#x540E;&#x5728;&#x539F;&#x6765;&#x53D1;&#x751F;&#x5931;&#x914D;&#x7684;&#x5730;&#x65B9;&#x8FD8;&#x4F1A;&#x518D;&#x4E00;&#x6B21;&#x53D1;&#x751F;&#x5931;&#x914D;&#xFF0C;&#x5982;&#x4E0B;&#x6240;&#x793A;&#xFF1A;</p>
+<table>
+<thead>
+<tr>
+<th style="text-align:center">k</th>
+<th style="text-align:center">1</th>
+<th style="text-align:center">2</th>
+<th style="text-align:center">3</th>
+<th style="text-align:center">4</th>
+<th style="text-align:center">5</th>
+<th style="text-align:center">6</th>
+<th style="text-align:center">7</th>
+<th style="text-align:center">8</th>
+<th style="text-align:center">9</th>
+<th style="text-align:center">10</th>
+<th style="text-align:center">11</th>
+<th style="text-align:center">12</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:center">Text</td>
+<td style="text-align:center">$a$</td>
+<td style="text-align:center">$b$</td>
+<td style="text-align:center">$c$</td>
+<td style="text-align:center">$a$</td>
+<td style="text-align:center">$b$</td>
+<td style="text-align:center">$c$</td>
+<td style="text-align:center">$a$</td>
+<td style="text-align:center">$a$</td>
+<td style="text-align:center">$a$</td>
+<td style="text-align:center">$b$</td>
+<td style="text-align:center">$a$</td>
+<td style="text-align:center">$b$</td>
+</tr>
+<tr>
+<td style="text-align:center">Pattern</td>
+<td style="text-align:center">$\color{green}{a}$</td>
+<td style="text-align:center">$\color{green}{b}$</td>
+<td style="text-align:center">$\color{green}{c}$</td>
+<td style="text-align:center">$\color{green}{a}$</td>
+<td style="text-align:center">$\color{green}{b}$</td>
+<td style="text-align:center">$\color{green}{c}$</td>
+<td style="text-align:center">$\color{green}{a}$</td>
+<td style="text-align:center">$\color{red}{c}$</td>
+<td style="text-align:center">$a$</td>
+<td style="text-align:center">$b$</td>
+<td style="text-align:center"></td>
+<td style="text-align:center"></td>
+<td></td>
+</tr>
+<tr>
+<td style="text-align:center">Pattern(Shifted)</td>
+<td style="text-align:center"></td>
+<td style="text-align:center"></td>
+<td style="text-align:center"></td>
+<td style="text-align:center">$\color{green}{a}$</td>
+<td style="text-align:center">$\color{green}{b}$</td>
+<td style="text-align:center">$\color{green}{c}$</td>
+<td style="text-align:center">$\color{green}{a}$</td>
+<td style="text-align:center">$\color{red}{b}$</td>
+<td style="text-align:center">$c$</td>
+<td style="text-align:center">$a$</td>
+<td style="text-align:center">$c$</td>
+<td style="text-align:center">&#xB7;&#xB7;&#xB7;</td>
+</tr>
+</tbody>
+</table>
+<p>&#x2003;&#x2003;&#x5176;&#x5B9E;&#x8FD9;&#x91CC;&#x8FD8;&#x6709;&#x4E00;&#x4E2A;&#x95EE;&#x9898;&#xFF0C;&#x53EF;&#x80FD;&#x4F1A;&#x8BA9;&#x4EBA;&#x6709;&#x4E9B;&#x56F0;&#x60D1;&#xFF0C;&#x65E2;&#x7136;&#x8DF3;&#x8F6C;&#x540E;&#x7684;&#x7279;&#x5F81;&#x4E32;&#x6211;&#x4EEC;&#x77E5;&#x9053;&#x4E86;&#x662F;$b$&#xFF0C;&#x53D1;&#x751F;&#x5931;&#x914D;&#x7684;&#x76EE;&#x6807;&#x4E32;&#x5B57;&#x7B26;&#x662F;$a$&#xFF0C;&#x4E24;&#x8005;&#x4E0D;&#x76F8;&#x540C;&#xFF0C;&#x518D;&#x6B21;&#x53D1;&#x751F;&#x4E86;&#x5931;&#x914D;&#xFF0C;&#x4E3A;&#x4EC0;&#x4E48;&#x4E0D;&#x8FDB;&#x4E00;&#x6B65;&#x5904;&#x7406;&#x4EE5;&#x83B7;&#x5F97;&#x6700;&#x7EC8;&#x7684;next&#x503C;&#x5462;&#xFF1F;</p>
+<p>&#x2003;&#x2003;&#x539F;&#x56E0;&#x5C31;&#x5728;&#x4E8E;&#xFF0C;&#x6211;&#x4EEC;&#x8981;&#x5339;&#x914D;&#x7684;&#x76EE;&#x6807;&#x4E32;&#x662F;&#x52A8;&#x6001;&#x53D8;&#x5316;&#x5E76;&#x4E14;&#x662F;&#x4E0D;&#x53EF;&#x9884;&#x77E5;&#x7684;&#xFF0C;&#x8FD9;&#x4E2A;&#x4F8B;&#x5B50;&#x53D1;&#x751F;&#x5931;&#x914D;&#x540E;&#x7ECF;&#x8FC7;&#x4E00;&#x6B21;&#x8DF3;&#x8F6C;&#x518D;&#x6B21;&#x53D1;&#x751F;&#x4E86;&#x5931;&#x914D;&#xFF0C;&#x4F46;&#x662F;&#x5728;&#x76EE;&#x6807;&#x4E32;&#x7684;&#x5176;&#x5B83;&#x5730;&#x65B9;&#xFF0C;&#x8DF3;&#x8F6C;&#x540E;&#x53EF;&#x80FD;&#x5C31;&#x5339;&#x914D;&#x4E0A;&#x4E86;&#xFF01;&#x4E3E;&#x4E2A;&#x4F8B;&#x5B50;&#x6765;&#x8BB2;&#xFF0C;&#x6BD4;&#x5982;&#x7279;&#x5F81;&#x4E32;&#x7B2C;&#x516B;&#x4E2A;&#x5B57;&#x7B26;&#x5728;&#x76EE;&#x6807;&#x4E32;&#x4E0A;&#x67D0;&#x5904;&#x518D;&#x6B21;&#x53D1;&#x751F;&#x5931;&#x914D;&#xFF0C;&#x5982;&#x4E0B;&#x6240;&#x793A;&#xFF1A;</p>
+<table>
+<thead>
+<tr>
+<th style="text-align:center">k</th>
+<th style="text-align:center">&#xB7;&#xB7;&#xB7;</th>
+<th style="text-align:center">x1</th>
+<th style="text-align:center">x2</th>
+<th style="text-align:center">x3</th>
+<th style="text-align:center">x4</th>
+<th style="text-align:center">x5</th>
+<th style="text-align:center">x6</th>
+<th style="text-align:center">x7</th>
+<th style="text-align:center">x8</th>
+<th style="text-align:center">x9</th>
+<th style="text-align:center">&#xB7;&#xB7;&#xB7;</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:center">Text</td>
+<td style="text-align:center">&#xB7;&#xB7;&#xB7;</td>
+<td style="text-align:center">$a$</td>
+<td style="text-align:center">$b$</td>
+<td style="text-align:center">$c$</td>
+<td style="text-align:center">$a$</td>
+<td style="text-align:center">$b$</td>
+<td style="text-align:center">$c$</td>
+<td style="text-align:center">$a$</td>
+<td style="text-align:center">$b$</td>
+<td style="text-align:center">$a$</td>
+<td style="text-align:center">&#xB7;&#xB7;&#xB7;</td>
+</tr>
+<tr>
+<td style="text-align:center">Pattern</td>
+<td style="text-align:center"></td>
+<td style="text-align:center">$\color{green}{a}$</td>
+<td style="text-align:center">$\color{green}{b}$</td>
+<td style="text-align:center">$\color{green}{c}$</td>
+<td style="text-align:center">$\color{green}{a}$</td>
+<td style="text-align:center">$\color{green}{b}$</td>
+<td style="text-align:center">$\color{green}{c}$</td>
+<td style="text-align:center">$\color{green}{a}$</td>
+<td style="text-align:center">$\color{red}{c}$</td>
+<td style="text-align:center">$a$</td>
+<td style="text-align:center"></td>
+</tr>
+<tr>
+<td style="text-align:center">Pattern(Shifted)</td>
+<td style="text-align:center"></td>
+<td style="text-align:center"></td>
+<td style="text-align:center"></td>
+<td style="text-align:center"></td>
+<td style="text-align:center">$\color{green}{a}$</td>
+<td style="text-align:center">$\color{green}{b}$</td>
+<td style="text-align:center">$\color{green}{c}$</td>
+<td style="text-align:center">$\color{green}{a}$</td>
+<td style="text-align:center">$\color{green}{b}$</td>
+<td style="text-align:center">$\color{red}{c}$</td>
+<td style="text-align:center">&#xB7;&#xB7;&#xB7;</td>
+</tr>
+</tbody>
+</table>
+<p>&#x2003;&#x2003;&#x5982;&#x4E0A;&#x8868;&#x6240;&#x793A;&#xFF0C;&#x4E0A;&#x4E00;&#x8F6E;&#x5931;&#x914D;&#x7684;&#x5B57;&#x7B26;&#xFF0C;&#x5728;&#x4E0B;&#x4E00;&#x8F6E;&#x5339;&#x914D;&#x65F6;&#x5374;&#x5339;&#x914D;&#x4E0A;&#x4E86;&#x3002;&#x800C;&#x540E;&#x9762;&#x8FD8;&#x6CA1;&#x6709;&#x5339;&#x914D;&#x7684;&#x76EE;&#x6807;&#x4E32;&#x4E2D;&#xFF0C;&#x53EF;&#x80FD;&#x8FD8;&#x5B58;&#x5728;&#x5927;&#x91CF;&#x8FD9;&#x6837;&#x7684;&#x4F8B;&#x5B50;&#xFF0C;&#x6BCF;&#x4E00;&#x6B21;&#x4F60;&#x90FD;&#x65E0;&#x6CD5;&#x9884;&#x6599;&#x8DF3;&#x8F6C;&#x540E;&#x662F;&#x5426;&#x80FD;&#x5339;&#x914D;&#x4E0A;&#xFF0C;&#x8FD8;&#x5F97;&#x8001;&#x8001;&#x5B9E;&#x5B9E;&#x505A;&#x4E00;&#x6B21;&#x5339;&#x914D;&#x3002;</p>
+<p>&#x2003;&#x2003;&#x81F3;&#x6B64;&#xFF0C;&#x5F0F;&#xFF08;2-7&#xFF09;&#x7684;&#x4E24;&#x4E2A;&#x6761;&#x4EF6;&#x6211;&#x4EEC;&#x5C31;&#x89E3;&#x7B54;&#x5B8C;&#x4E86;&#xFF0C;&#x8FD9;&#x91CC;&#x6211;&#x4EEC;&#x518D;&#x5BF9;&#x6BD4;&#x4E0B;next&#x6570;&#x7EC4;&#x503C;&#x548C;f&#x6570;&#x7EC4;&#x503C;&#x7684;&#x5F02;&#x540C;&#xFF1A;</p>
+<ul>
+<li>&#x4E24;&#x8005;&#x5747;&#x53EF;&#x5728;&#x5931;&#x914D;&#x53D1;&#x751F;&#x540E;&#xFF0C;&#x8BA1;&#x7B97;&#x79FB;&#x52A8;&#x7684;&#x5B57;&#x7B26;&#x6570;&#xFF1B;</li>
+<li>f&#x6570;&#x7EC4;&#x503C;&#x6CA1;&#x6709;&#x5BF9;&#x5931;&#x914D;&#x540E;&#x7684;&#x8DF3;&#x8F6C;&#x505A;&#x8FDB;&#x4E00;&#x6B65;&#x5224;&#x65AD;&#xFF0C;Next&#x6570;&#x7EC4;&#x503C;&#x5BF9;&#x80FD;&#x5904;&#x7406;&#x7684;&#x90FD;&#x505A;&#x4E86;&#x5904;&#x7406;&#xFF0C;&#x8BA1;&#x7B97;&#x51FA;&#x5176;&#x6700;&#x9AD8;&#x6548;&#x7684;&#x8DF3;&#x8F6C;&#x503C;&#xFF1B;</li>
+<li>&#x7279;&#x5F81;&#x4E32;&#x7B2C;&#x4E00;&#x4E2A;&#x5B57;&#x7B26;&#x5931;&#x914D;&#x540E;&#xFF0C;&#x5176;f&#x503C;&#x548C;Next&#x503C;&#x5747;&#x4E3A;0&#xFF1B;</li>
+<li>&#x7279;&#x5F81;&#x4E32;&#x9664;&#x7B2C;&#x4E00;&#x4E2A;&#x5B57;&#x7B26;&#x5916;&#x7684;&#x6240;&#x6709;&#x5B57;&#x7B26;&#x53D1;&#x751F;&#x5931;&#x914D;&#x540E;&#xFF0C;&#x5982;&#x679C;&#x524D;&#x9762;&#x627E;&#x4E0D;&#x5230;&#x6709;&#x6548;&#x7684;&#x524D;&#x7F00;&#xFF0C;f&#x503C;&#x4E3A;1&#xFF0C;&#x800C;next&#x503C;&#x4E3A;0&#xFF1B;</li>
+</ul>
+<p>&#x2003;&#x2003;&#x5728;&#x5B9E;&#x9645;&#x5B9E;&#x73B0;&#x4E0A;&#xFF0C;&#x6211;&#x4EEC;&#x5B8C;&#x5168;&#x53EF;&#x4EE5;&#x628A;next&#x503C;&#x548C;f&#x503C;&#x7684;&#x6C42;&#x89E3;&#x878D;&#x5408;&#x5728;&#x4E00;&#x8D77;&#xFF0C;&#x800C;&#x5B8C;&#x5168;&#x4E0D;&#x9700;&#x8981;&#x5355;&#x72EC;&#x5B58;&#x50A8;f&#x503C;&#xFF0C;&#x4E5F;&#x4E0D;&#x9700;&#x8981;&#x7B49;&#x6240;&#x6709;f&#x503C;&#x6C42;&#x89E3;&#x5B8C;&#x4E86;&#x4E4B;&#x540E;&#x518D;&#x6765;&#x8F6C;&#x6362;&#x6210;next&#x503C;&#x3002;&#x7B97;&#x6CD5;&#xFF08;<strong>&#x76F8;&#x8F83;&#x4E8E;Paper&#x7565;&#x6709;&#x6539;&#x52A8;</strong>&#xFF09;&#x4F2A;&#x4EE3;&#x7801;&#x5982;&#x4E0B;&#xFF1A;</p>
+<p>$$<br>\begin{split}<br>&amp; \overline{\underline{\textbf{Algorithm  2    } \qquad \qquad \qquad \qquad \qquad \qquad \qquad \qquad \qquad \qquad \qquad}} \\\\<br>&amp; \textbf{Input:    pattern} \\\\<br>&amp; \textbf{Output:   next[m]} \\\\<br>&amp; \textbf{function} \quad next\_precompile(pattern): \\\\<br>&amp;1 \qquad  m \ = \ pattern.length \\\\<br>&amp;2 \qquad  next[1] \ = \ 0 , \quad k = 1 , \quad t= \ 0\\\\<br>&amp;3 \qquad  \textbf{while} \ \ k \  &lt;  \ m \\\\\<br>&amp;4 \qquad  \qquad \textbf{while} \ \ t \  &gt; \ 0 \ \ \textbf{and} \ \ pattern[t] \ \neq \ pattern[k] \\\\<br>&amp;5 \qquad  \qquad  \qquad t:=\ next[t] \\\\<br>&amp;6 \qquad  \qquad t:=\ t \ + \ 1 , \quad k:=\ k \ + \ 1 \\\\<br>&amp;7 \qquad  \qquad \textbf{if} \ \ pattern[t] \ = \ pattern[k] \\\\<br>&amp;8  \qquad  \qquad \qquad next[k]:= \ next[t] \\\\<br>&amp;9  \qquad  \qquad \textbf{else} \\\\<br>1&amp;0  \qquad  \qquad  \qquad \ next[k]:= \ t \\\\<br>1&amp;1 \qquad  \textbf{return} \ \ next \\\\<br>&amp; \underline{\textbf{end    function} \qquad \qquad \qquad \qquad \qquad \qquad \qquad \qquad \qquad \qquad \qquad} \\\\<br>\end{split}<br>$$</p>
+<p>&#x2003;&#x2003;&#x5206;&#x6790;&#x53EF;&#x77E5;&#xFF0C;&#x8BA1;&#x7B97;f&#x6570;&#x7EC4;&#x4EE5;&#x53CA;Next&#x6570;&#x7EC4;&#x7684;&#x65F6;&#x95F4;&#x590D;&#x6742;&#x5EA6;&#x5747;&#x4E3A;$O(m)$&#xFF0C;&#x8FD9;&#x91CC;&#x4E0D;&#x505A;&#x5C55;&#x5F00;&#xFF0C;&#x5728;Paper&#x7B2C;6&#x9875;&#x6709;&#x8BE6;&#x7EC6;&#x7684;&#x5206;&#x6790;&#x8BF4;&#x660E;&#xFF0C;&#x611F;&#x5174;&#x8DA3;&#x8BF7;&#x81EA;&#x884C;&#x53C2;&#x9605;&#x3002;</p>
+<h5 id="2-4-3-7-NFA&#x548C;DFA&#x7684;&#x7C7B;&#x6BD4;&#x8BF4;&#x660E;"><a href="#2-4-3-7-NFA&#x548C;DFA&#x7684;&#x7C7B;&#x6BD4;&#x8BF4;&#x660E;" class="headerlink" title="2.4.3.7 NFA&#x548C;DFA&#x7684;&#x7C7B;&#x6BD4;&#x8BF4;&#x660E;"></a>2.4.3.7 NFA&#x548C;DFA&#x7684;&#x7C7B;&#x6BD4;&#x8BF4;&#x660E;<a name="nfa_dfa_compare"></a></h5><p>&#x2003;&#x2003;&#x524D;&#x9762;&#x8BF4;&#x5230;&#x4E86;f&#x503C;&#x7C7B;&#x4F3C;&#x6211;&#x4EEC;&#x7684;NFA&#xFF0C;next&#x503C;&#x7C7B;&#x4F3C;&#x6211;&#x4EEC;&#x7684;DFA&#xFF0C;&#x8FD9;&#x91CC;&#x4E3E;&#x4E2A;&#x4F8B;&#x5B50;&#x6765;&#x4E88;&#x4EE5;&#x8BF4;&#x660E;&#xFF0C;&#x65B9;&#x4FBF;&#x6CA1;&#x6709;&#x76F8;&#x5173;&#x77E5;&#x8BC6;&#x7684;&#x540C;&#x5B66;&#x53BB;&#x7406;&#x89E3;f&#x503C;&#x548C;next&#x503C;&#x7684;&#x533A;&#x522B;&#x3002;&#x4ECD;&#x4EE5;&#x524D;&#x9762;&#x7684;&#x4F8B;&#x5B50;&#x6765;&#x8BF4;&#xFF0C;&#x6211;&#x4EEC;&#x6709;f&#x503C;&#x53CA;next&#x503C;&#x5982;&#x4E0B;&#x8868;&#xFF1A;</p>
+<table>
+<thead>
+<tr>
+<th style="text-align:center">k</th>
+<th style="text-align:center">1</th>
+<th style="text-align:center">2</th>
+<th style="text-align:center">3</th>
+<th style="text-align:center">4</th>
+<th style="text-align:center">5</th>
+<th style="text-align:center">6</th>
+<th style="text-align:center">7</th>
+<th style="text-align:center">8</th>
+<th style="text-align:center">9</th>
+<th style="text-align:center">10</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:center">Pattern[k]</td>
+<td style="text-align:center">$a$</td>
+<td style="text-align:center">$b$</td>
+<td style="text-align:center">$c$</td>
+<td style="text-align:center">$a$</td>
+<td style="text-align:center">$b$</td>
+<td style="text-align:center">$c$</td>
+<td style="text-align:center">$a$</td>
+<td style="text-align:center">$c$</td>
+<td style="text-align:center">$a$</td>
+<td style="text-align:center">$b$</td>
+</tr>
+<tr>
+<td style="text-align:center">f[k]</td>
+<td style="text-align:center">0</td>
+<td style="text-align:center">1</td>
+<td style="text-align:center">1</td>
+<td style="text-align:center">1</td>
+<td style="text-align:center">2</td>
+<td style="text-align:center">3</td>
+<td style="text-align:center">4</td>
+<td style="text-align:center">5</td>
+<td style="text-align:center">1</td>
+<td style="text-align:center">2</td>
+</tr>
+<tr>
+<td style="text-align:center">next[k]</td>
+<td style="text-align:center">0</td>
+<td style="text-align:center">1</td>
+<td style="text-align:center">1</td>
+<td style="text-align:center">$\color{red}{0}$</td>
+<td style="text-align:center">$\color{red}{1}$</td>
+<td style="text-align:center">$\color{red}{1}$</td>
+<td style="text-align:center">$\color{red}{0}$</td>
+<td style="text-align:center">5</td>
+<td style="text-align:center">$\color{red}{0}$</td>
+<td style="text-align:center">$\color{red}{1}$</td>
+</tr>
+</tbody>
+</table>
+<p>&#x2003;&#x2003;&#x6211;&#x4EEC;&#x6765;&#x770B;&#x7D22;&#x5F15;&#x53F7;&#x4E3A;4&#x7684;&#x7279;&#x5F81;&#x4E32;&#xFF0C;&#x5047;&#x8BBE;&#x5728;&#x8FD9;&#x91CC;&#x53D1;&#x751F;&#x4E86;&#x5931;&#x914D;&#xFF0C;&#x6309;&#x7167;&#x4E0A;&#x8FF0;f&#x503C;&#x7684;&#x79FB;&#x52A8;(4-1=3)&#x3001;next&#x503C;&#x79FB;&#x52A8;(4 - 0 = 4)&#x7279;&#x5F81;&#x4E32;&#x540E;&#x5982;&#x4E0B;&#x6240;&#x793A;&#xFF1A;</p>
+<table>
+<thead>
+<tr>
+<th style="text-align:center">k</th>
+<th style="text-align:center">1</th>
+<th style="text-align:center">2</th>
+<th style="text-align:center">3</th>
+<th style="text-align:center">4</th>
+<th style="text-align:center">5</th>
+<th style="text-align:center">6</th>
+<th style="text-align:center">7</th>
+<th style="text-align:center">8</th>
+<th style="text-align:center">9</th>
+<th style="text-align:center">10</th>
+<th style="text-align:center">11</th>
+<th style="text-align:center">12</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:center">Text</td>
+<td style="text-align:center">$a$</td>
+<td style="text-align:center">$b$</td>
+<td style="text-align:center">$c$</td>
+<td style="text-align:center">$b$</td>
+<td style="text-align:center">$a$</td>
+<td style="text-align:center">$c$</td>
+<td style="text-align:center">$a$</td>
+<td style="text-align:center">$c$</td>
+<td style="text-align:center">$a$</td>
+<td style="text-align:center">$b$</td>
+<td style="text-align:center">$a$</td>
+<td style="text-align:center">$b$</td>
+</tr>
+<tr>
+<td style="text-align:center">Pattern</td>
+<td style="text-align:center">$\color{green}{a}$</td>
+<td style="text-align:center">$\color{green}{b}$</td>
+<td style="text-align:center">$\color{green}{c}$</td>
+<td style="text-align:center">$\color{red}{a}$</td>
+<td style="text-align:center">$b$</td>
+<td style="text-align:center">$c$</td>
+<td style="text-align:center">$a$</td>
+<td style="text-align:center">$c$</td>
+<td style="text-align:center">$a$</td>
+<td style="text-align:center">$b$</td>
+<td style="text-align:center"></td>
+<td style="text-align:center"></td>
+</tr>
+<tr>
+<td style="text-align:center">Pattern(f-Shifted)</td>
+<td style="text-align:center"></td>
+<td style="text-align:center"></td>
+<td style="text-align:center"></td>
+<td style="text-align:center">$\color{red}{a}$</td>
+<td style="text-align:center">$b$</td>
+<td style="text-align:center">$c$</td>
+<td style="text-align:center">$a$</td>
+<td style="text-align:center">$b$</td>
+<td style="text-align:center">$c$</td>
+<td style="text-align:center">$a$</td>
+<td style="text-align:center">$c$</td>
+<td style="text-align:center">$a$</td>
+</tr>
+<tr>
+<td style="text-align:center">Pattern(next-Shifted)</td>
+<td style="text-align:center"></td>
+<td style="text-align:center"></td>
+<td style="text-align:center"></td>
+<td style="text-align:center"></td>
+<td style="text-align:center">$\color{green}{a}$</td>
+<td style="text-align:center">$b$</td>
+<td style="text-align:center">$c$</td>
+<td style="text-align:center">$a$</td>
+<td style="text-align:center">$b$</td>
+<td style="text-align:center">$c$</td>
+<td style="text-align:center">$a$</td>
+<td style="text-align:center">&#xB7;&#xB7;&#xB7;</td>
+</tr>
+</tbody>
+</table>
+<p>&#x2003;&#x2003;&#x53EF;&#x4EE5;&#x770B;&#x51FA;&#xFF0C;&#x5931;&#x914D;&#x540E;&#xFF0C;&#x6839;&#x636E;f&#x503C;&#x6211;&#x4EEC;&#x53EA;&#x80FD;&#x5F80;&#x524D;&#x79FB;&#x52A8;$4 - f[4] = 4 - 1 = 3$&#x4E2A;&#x5B57;&#x7B26;&#xFF0C;&#x7136;&#x540E;&#x6BD4;&#x5BF9;&#x7279;&#x5F81;&#x4E32;&#x7B2C;1&#x4E2A;&#x5B57;&#x7B26;$pattern[f[4]] = pattern[1] = a$&#x548C;&#x76EE;&#x6807;&#x4E32;&#x7B2C;4&#x4E2A;&#x5B57;&#x7B26;$b$&#xFF0C;&#x53D1;&#x73B0;&#x518D;&#x6B21;&#x5931;&#x914D;&#xFF0C;&#x7136;&#x540E;&#x7279;&#x5F81;&#x4E32;&#x518D;&#x5F80;&#x524D;&#x632A;&#x52A8;&#x4E00;&#x683C;&#xFF0C;&#x5230;&#x8FBE;&#x6211;&#x4EEC;&#x6309;&#x7167;next&#x503C;&#x6240;&#x79FB;&#x52A8;&#x5230;&#x7684;&#x4F4D;&#x7F6E;&#x3002;&#x5F88;&#x660E;&#x663E;&#x8FD9;&#x4E00;&#x6B65;&#x662F;&#x5B8C;&#x5168;&#x6CA1;&#x6709;&#x5FC5;&#x8981;&#x7684;&#xFF0C;&#x6211;&#x4EEC;&#x53EF;&#x4EE5;&#x76F4;&#x63A5;&#x8DF3;&#x5230;&#x76EE;&#x6807;&#x4E32;&#x7D22;&#x5F15;&#x53F7;&#x4E3A;5&#x7684;&#x5B57;&#x7B26;$a$&#x5904;&#x5F00;&#x59CB;&#x3002;</p>
+<p>&#x2003;&#x2003;&#x4E0A;&#x4E00;&#x8F6E;&#x5339;&#x914D;&#x65F6;&#x7279;&#x5F81;&#x4E32;&#x5B57;&#x7B26;&#x4E3A;$a$&#xFF0C;&#x53D1;&#x751F;&#x4E86;&#x5931;&#x914D;&#xFF0C;&#x6839;&#x636E;f&#x503C;&#x8DF3;&#x8F6C;&#x540E;&#xFF0C;&#x6211;&#x4EEC;&#x8981;&#x5339;&#x914D;&#x7684;&#x7B2C;&#x4E00;&#x4E2A;&#x7279;&#x5F81;&#x4E32;&#x5B57;&#x7B26;&#x4ECD;&#x7136;&#x662F;$a$&#xFF0C;&#x8FD9;&#x5C31;&#x5FC5;&#x7136;&#x4F1A;&#x5BFC;&#x81F4;&#x518D;&#x6B21;&#x5931;&#x914D;&#x3002;&#x4F46;&#x7531;&#x4E8E;f&#x503C;&#x4EC5;&#x4EC5;&#x5B58;&#x50A8;&#x7684;&#x662F;&#x5931;&#x914D;&#x5904;&#x5B57;&#x7B26;&#x524D;&#x9762;&#x7684;&#x6700;&#x5927;&#x524D;/&#x540E;&#x7F00;&#xFF0C;&#x6CA1;&#x6709;&#x5173;&#x4E8E;&#x524D;/&#x540E;&#x7F00;&#x7684;&#x4E0B;&#x4E00;&#x4E2A;&#x5B57;&#x7B26;&#x7684;&#x4FE1;&#x606F;&#xFF0C;&#x6240;&#x4EE5;&#x4F7F;&#x7528;f&#x503C;&#x662F;&#x65E0;&#x6CD5;&#x907F;&#x514D;&#x5927;&#x91CF;&#x91CD;&#x590D;&#x5339;&#x914D;&#x7684;&#x3002;</p>
+<p>&#x2003;&#x2003;&#x800C;next&#x503C;&#x4FDD;&#x5B58;&#x7684;&#x662F;&#xFF0C;&#x8BA9;&#x4F60;&#x5728;&#x4E0D;&#x6F0F;&#x5339;&#x914D;&#x7684;&#x60C5;&#x51B5;&#x4E0B;&#xFF0C;&#x6700;&#x5927;&#x79FB;&#x52A8;&#x7684;&#x5B57;&#x7B26;&#x6570;&#x3002;</p>
+<h4 id="2-4-4-&#x5B8C;&#x6574;KMP&#x4EE3;&#x7801;"><a href="#2-4-4-&#x5B8C;&#x6574;KMP&#x4EE3;&#x7801;" class="headerlink" title="2.4.4 &#x5B8C;&#x6574;KMP&#x4EE3;&#x7801;"></a>2.4.4 &#x5B8C;&#x6574;KMP&#x4EE3;&#x7801;</h4><p>&#x2003;&#x2003;&#x5728;&#x672C;&#x8282;&#x7684;&#x6700;&#x540E;&#xFF0C;&#x6211;&#x4EEC;&#x7ED9;&#x51FA;&#x5B8C;&#x6574;&#x7684;KMP&#x7B97;&#x6CD5;&#x4F2A;&#x4EE3;&#x7801;&#xFF0C;&#x5982;&#x4E0B;&#x6240;&#x793A;&#xFF1A;</p>
+<p>$$<br>\begin{split}<br>&amp; \overline{\underline{\textbf{Algorithm  3    KMP} \qquad \qquad \qquad \qquad \qquad \qquad \qquad \qquad \qquad \qquad \qquad}} \\\\<br>&amp; \textbf{Input:    text,    pattern} \\\\<br>&amp; \textbf{Output:   index(1st match)  or  -1(no match)} \\\\<br>&amp; \textbf{function} \quad kmp\_algorithm(text, \ pattern): \\\\<br>&amp;1 \qquad  m \ = \ pattern.length, \quad  s \ = \ 1(ptr \ of \ pattern)\\\\<br>&amp;2 \qquad  n \ = \ text.length, \quad   r \ = \ 1(ptr \ of \ text)\\\\<br>&amp;3 \qquad  next \ = \ next\_precompile(pattern)\\\\<br>&amp;4 \qquad  \textbf{while} \ \ s \leq  \ m  \ \ \textbf{and} \ \ r \leq n\\\\\<br>&amp;5 \qquad  \qquad \textbf{while} \ \ s \  &gt; \ 0 \ \ \textbf{and} \ \ pattern[s] \ \neq \ text[r] \\\\<br>&amp;6 \qquad  \qquad  \qquad s:=\ next[s] \\\\<br>&amp;7 \qquad  \qquad s:=\ s \ + \ 1 , \quad r:=\ r \ + \ 1 \\\\\<br>&amp;8  \qquad \textbf{if} \ \ s \ &gt; \ m\\\\<br>&amp;9  \qquad  \qquad \textbf{return} \ \  r - 1\\\\<br>1&amp;0 \qquad  \textbf{else}\\\\<br>1&amp;1 \qquad   \qquad \textbf{return} \ \ -1\\\\<br>&amp; \textbf{end    function} \qquad \qquad \qquad \qquad \qquad \qquad \qquad \qquad \qquad \qquad \qquad \\\\<br>\\\\<br>&amp; \textbf{function} \quad next\_precompile(pattern): \\\\<br>1&amp;2 \qquad  m \ = \ pattern.length \\\\<br>1&amp;3 \qquad  next[1] \ = \ 0 , \quad k = 1 , \quad t= \ 0\\\\<br>1&amp;4 \qquad  \textbf{while} \ \ k \  &lt;  \ m \\\\\<br>1&amp;5 \qquad  \qquad \textbf{while} \ \ t \  &gt; \ 0 \ \ \textbf{and} \ \ pattern[t] \ \neq \ pattern[k] \\\\<br>1&amp;6 \qquad  \qquad  \qquad t:=\ next[t] \\\\<br>1&amp;7 \qquad  \qquad t:=\ t \ + \ 1 , \quad k:=\ k \ + \ 1 \\\\<br>1&amp;8 \qquad  \qquad \textbf{if} \ \ pattern[t] \ = \ pattern[k] \\\\<br>1&amp;9  \qquad  \qquad \qquad next[k]:= \ next[t] \\\\<br>2&amp;0  \qquad  \qquad \textbf{else} \\\\<br>2&amp;1  \qquad  \qquad  \qquad \ next[k]:= \ t \\\\<br>2&amp;2 \qquad  \textbf{return} \ \ next \\\\<br>&amp; \underline{\textbf{end    function} \qquad \qquad \qquad \qquad \qquad \qquad \qquad \qquad \qquad \qquad \qquad} \\\\<br>\end{split}<br>$$</p>
+<p>&#x2003;&#x2003;KMP&#x7B97;&#x6CD5;&#x603B;&#x7684;&#x65F6;&#x95F4;&#x590D;&#x6742;&#x5EA6;&#xFF08;&#x5305;&#x62EC;&#x9884;&#x8BA1;&#x7B97;Next&#x6570;&#x7EC4;&#xFF09;&#x4E3A;$O(m + n)$&#xFF0C;&#x5982;&#x679C;&#x53EA;&#x8003;&#x8651;&#x5339;&#x914D;/&#x641C;&#x7D22;&#x90E8;&#x5206;&#x7684;&#x8BDD;&#xFF0C;&#x4E3A;$O(n)$&#x3002;&#x8FD9;&#x4E9B;&#x65E0;&#x8BBA;&#x662F;&#x300A;&#x7B97;&#x6CD5;&#x5BFC;&#x8BBA;&#x300B;&#x8FD8;&#x662F;&#x539F;&#x59CB;Paper&#x4E2D;&#x90FD;&#x6709;&#x8BE6;&#x7EC6;&#x7684;&#x5206;&#x6790;&#xFF0C;&#x9650;&#x4E8E;&#x7BC7;&#x5E45;&#xFF0C;&#x8FD9;&#x91CC;&#x5C31;&#x4E0D;&#x518D;&#x5C55;&#x5F00;&#x3002;</p>
+<h3 id="2-5-KMP&#x4F18;&#x5316;&#x548C;&#x6269;&#x5C55;"><a href="#2-5-KMP&#x4F18;&#x5316;&#x548C;&#x6269;&#x5C55;" class="headerlink" title="2.5 KMP&#x4F18;&#x5316;&#x548C;&#x6269;&#x5C55;"></a>2.5 KMP&#x4F18;&#x5316;&#x548C;&#x6269;&#x5C55;</h3><p>&#x2003;&#x2003;KMP&#x7B97;&#x6CD5;&#x7684;&#x5B9E;&#x73B0;&#x4E0D;&#x53EF;&#x8C13;&#x4E0D;&#x7CBE;&#x5999;&#xFF0C;&#x5C24;&#x5176;&#x662F;&#x524D;/&#x540E;&#x7F00;&#x7684;&#x5F15;&#x8FDB;&#xFF0C;&#x72B9;&#x5982;&#x795E;&#x6765;&#x4E4B;&#x7B14;&#xFF0C;&#x7136;&#x800C;&#x5373;&#x4F7F;&#x8FD9;&#x6837;&#xFF0C;&#x4E0A;&#x9762;&#x7684;&#x7B97;&#x6CD5;&#x5339;&#x914D;&#x6027;&#x80FD;&#x4E5F;&#x8FD8;&#x6709;&#x8BB8;&#x591A;&#x53EF;&#x4F18;&#x5316;&#x4E4B;&#x5904;&#x3002;<br>&#x2003;&#x2003;&#x6B64;&#x5916;&#xFF0C;&#x4E0A;&#x9762;&#x7684;&#x4EE3;&#x7801;&#x68C0;&#x6D4B;&#x5230;&#x7B2C;&#x4E00;&#x4E2A;&#x7279;&#x5F81;&#x4E32;&#x4E4B;&#x540E;&#x5C31;&#x505C;&#x6B62;&#x4E86;&#xFF0C;&#x4E5F;&#x5373;&#x53EA;&#x80FD;&#x68C0;&#x6D4B;&#x51FA;&#x76EE;&#x6807;&#x4E32;&#x4E2D;&#x6700;&#x5DE6;&#x8FB9;&#x7684;&#x7279;&#x5F81;&#x4E32;&#xFF0C;&#x7A0D;&#x505A;&#x5904;&#x7406;&#x4E4B;&#x540E;&#xFF0C;KMP&#x53EF;&#x4EE5;&#x628A;&#x6574;&#x4E2A;&#x76EE;&#x6807;&#x4E32;&#x4E2D;&#x7684;&#x7279;&#x5F81;&#x4E32;&#x90FD;&#x68C0;&#x7D22;&#x51FA;&#x6765;&#x3002;</p>
+<h4 id="2-5-1-&#x6027;&#x80FD;&#x4F18;&#x5316;"><a href="#2-5-1-&#x6027;&#x80FD;&#x4F18;&#x5316;" class="headerlink" title="2.5.1 &#x6027;&#x80FD;&#x4F18;&#x5316;"></a>2.5.1 &#x6027;&#x80FD;&#x4F18;&#x5316;</h4><p>&#x2003;&#x2003;KMP&#x7B97;&#x6CD5;&#x5728;&#x5176;Paper&#x4E2D;&#x63D0;&#x5230;&#xFF0C;&#x5728;&#x5B9E;&#x9645;&#x7684;&#x5E94;&#x7528;&#x573A;&#x666F;&#x4E2D;&#xFF0C;&#x4E0A;&#x8FF0;&#x6CA1;&#x6709;&#x4F18;&#x5316;&#x8FC7;&#x7684;KMP&#x7B97;&#x6CD5;&#x5B9E;&#x9645;&#x7684;&#x8868;&#x73B0;&#x6027;&#x80FD;&#x53EF;&#x80FD;&#x8FD8;&#x4E0D;&#x5982;&#x66B4;&#x529B;&#x5339;&#x914D;&#x7B97;&#x6CD5;&#xFF0C;&#x539F;&#x8BDD;&#x662F;&#x8FD9;&#x4E48;&#x8BF4;&#x7684;&#xFF1A;</p>
+<blockquote>
+<p>In fact, the algorithm as presented above would probably not be competitive with the naive algorithm on realistic data, even though the naive algorithm has a worst-case time of order m times n instead of m plus n, because the chance of this worst case is rather slim.</p>
+</blockquote>
+<p>&#x2003;&#x2003;&#x4F5C;&#x8005;&#x7684;&#x610F;&#x601D;&#x5F88;&#x660E;&#x786E;&#xFF0C;&#x867D;&#x7136;KMP&#x7406;&#x8BBA;&#x4E0A;&#x7684;&#x65F6;&#x95F4;&#x590D;&#x6742;&#x5EA6;&#x4E3A;&#x7EBF;&#x6027;$O(m + n)$&#xFF0C;&#x800C;BF&#x7B97;&#x6CD5;&#x6700;&#x574F;&#x60C5;&#x51B5;&#x4E0B;&#x4E3A;$O(m \cdot n)$&#xFF0C;&#x4F46;&#x6BD5;&#x7ADF;&#x8FD9;&#x79CD;&#x60C5;&#x51B5;&#x5728;&#x5B9E;&#x9645;&#x5E94;&#x7528;&#x4E2D;&#x662F;&#x6781;&#x96BE;&#x9047;&#x5230;&#x7684;&#x3002;&#x9488;&#x5BF9;&#x4E0A;&#x8FF0;&#x7B97;&#x6CD5;&#x5B58;&#x5728;&#x7684;&#x95EE;&#x9898;&#xFF0C;&#x4F5C;&#x8005;&#x4ECE;&#x4EE5;&#x4E0B;&#x51E0;&#x4E2A;&#x65B9;&#x9762;&#x5165;&#x624B;&#xFF0C;&#x5206;&#x522B;&#x4ECB;&#x7ECD;&#x4E86;&#x95EE;&#x9898;&#x7684;&#x6839;&#x6E90;&#xFF0C;&#x4EE5;&#x53CA;&#x5BF9;&#x5E94;&#x7684;&#x89E3;&#x51B3;&#x529E;&#x6CD5;&#x3002;</p>
+<h5 id="2-5-1-1-Large-alphabet-of-characters"><a href="#2-5-1-1-Large-alphabet-of-characters" class="headerlink" title="2.5.1.1 Large alphabet of characters"></a>2.5.1.1 Large alphabet of characters</h5><p>&#x2003;&#x2003;&#x5F53;&#x6211;&#x4EEC;&#x5B57;&#x7B26;&#x4E32;&#x4E2D;&#x7684;&#x5B57;&#x6BCD;&#x5F88;&#x591A;&#x7684;&#x65F6;&#x5019;&#xFF0C;&#x6211;&#x4EEC;&#x5F88;&#x96BE;&#x5F97;&#x5230;&#x4E00;&#x6B21;&#x90E8;&#x5206;&#x5339;&#x914D;(partial match)&#xFF0C;&#x51E0;&#x4E4E;&#x90FD;&#x662F;&#x5728;&#x7279;&#x5F81;&#x4E32;&#x7B2C;&#x4E00;&#x4E2A;&#x5B57;&#x7B26;&#x5904;&#x5C31;&#x53D1;&#x751F;&#x4E86;&#x5931;&#x914D;&#xFF0C;&#x6BD4;&#x5982;&#x6709;&#x76EE;&#x6807;&#x4E32;$bc&#x2026;xyz$&#xFF0C;&#x7279;&#x5F81;&#x4E32;$ac&#x2026;$&#xFF0C;&#x7279;&#x5F81;&#x4E32;&#x6BCF;&#x6B21;&#x5728;&#x9996;&#x5B57;&#x7B26;&#x5C31;&#x53D1;&#x751F;&#x5931;&#x914D;&#xFF0C;&#x7136;&#x540E;&#x67E5;Next&#x6570;&#x7EC4;&#x6709;$next[1] = 0$&#xFF0C;&#x4E8E;&#x662F;&#x7528;&#x8FD9;&#x4E2A;&#x503C;&#x66F4;&#x65B0;&#x7279;&#x5F81;&#x4E32;&#x6307;&#x9488;$s:= next[s]$&#xFF0C;&#x7136;&#x540E;&#x5224;&#x65AD;&#x8FD9;&#x4E2A;&#x6307;&#x9488;&#x662F;&#x5426;&#x8D8A;&#x754C;$s \leq m$&#x3002;&#x6211;&#x4EEC;&#x6BCF;&#x6B21;&#x90FD;&#x53EA;&#x80FD;&#x5F80;&#x53F3;&#x79FB;&#x52A8;$1 - 0 = 1$&#x4E2A;&#x5B57;&#x7B26;&#xFF0C;&#x7136;&#x540E;&#x53BB;&#x8FDB;&#x884C;&#x5404;&#x79CD;&#x5404;&#x6837;&#x7684;&#x5224;&#x65AD;&#xFF0C;&#x5BFC;&#x81F4;&#x6548;&#x7387;&#x5F02;&#x5E38;&#x5E95;&#x4E0B;&#xFF0C;&#x8FD9;&#x79CD;&#x60C5;&#x51B5;&#x4E0B;KMP&#x7684;&#x6548;&#x7387;&#x4E0E;&#x6211;&#x4EEC;&#x7684;BF&#x7B97;&#x6CD5;&#x5176;&#x5B9E;&#x662F;&#x4E00;&#x6837;&#x7684;&#x3002;</p>
+<p>&#x2003;&#x2003;&#x89E3;&#x51B3;&#x7684;&#x529E;&#x6CD5;&#x662F;&#xFF0C;&#x5C06;$s = 1$&#x8FD9;&#x79CD;&#x60C5;&#x51B5;&#x4F5C;&#x4E3A;&#x7279;&#x6B8A;&#x4F8B;&#x5B50;&#x6765;&#x5904;&#x7406;&#x3002;&#x5177;&#x4F53;&#x505A;&#x6CD5;&#x662F;&#xFF0C;&#x5F53;&#x5728;&#x7279;&#x5F81;&#x4E32;&#x7684;&#x9996;&#x5B57;&#x7B26;&#x5904;&#x5931;&#x914D;&#x65F6;&#xFF0C;&#x4E0D;&#x53BB;&#x67E5;Next&#x8868;&#xFF0C;&#x4E5F;&#x4E0D;&#x7528;&#x53BB;&#x66F4;&#x65B0;$s$&#x4EE5;&#x53CA;&#x5224;&#x65AD;&#x5176;&#x662F;&#x5426;&#x8D8A;&#x754C;&#xFF0C;&#x76F4;&#x63A5;&#x5C06;&#x76EE;&#x6807;&#x4E32;&#x6307;&#x9488;$r$&#x81EA;&#x589E;1&#x518D;&#x5224;&#x65AD;&#xFF08;&#x5373;&#x6307;&#x5411;&#x4E0B;&#x4E00;&#x4E2A;&#x76EE;&#x6807;&#x4E32;&#x5B57;&#x7B26;&#xFF09;&#x5373;&#x53EF;&#xFF0C;&#x90E8;&#x5206;&#x4F2A;&#x4EE3;&#x7801;&#x5982;&#x4E0B;&#xFF1A;</p>
+<p>$$<br>\begin{split}<br>&amp; \underline{ \qquad \qquad \qquad \qquad \qquad \qquad \qquad \qquad \qquad \qquad \qquad \qquad \qquad \qquad \qquad} \\\\<br>&amp;1 \qquad  \textbf{while} \ \  s = 1 \ \ \textbf{and}\ \ text[r] \neq  \ pattern[1] \\\\<br>&amp;2 \qquad  \qquad r:= \ r \ + \ 1 \\\\<br>&amp;3 \qquad  \qquad \textbf{if} \ \ r &gt; n \\\\<br>&amp;4 \qquad  \qquad  \qquad break \\\\<br>&amp; \underline{ \qquad \qquad \qquad \qquad \qquad \qquad \qquad \qquad \qquad \qquad \qquad \qquad \qquad \qquad \qquad} \\\\<br>\end{split}<br>$$</p>
+<h5 id="2-5-1-2-&#x5168;&#x5339;&#x914D;&#x68C0;&#x6D4B;"><a href="#2-5-1-2-&#x5168;&#x5339;&#x914D;&#x68C0;&#x6D4B;" class="headerlink" title="2.5.1.2 &#x5168;&#x5339;&#x914D;&#x68C0;&#x6D4B;"></a>2.5.1.2 &#x5168;&#x5339;&#x914D;&#x68C0;&#x6D4B;</h5><p>&#x2003;&#x2003;&#x6BCF;&#x4E00;&#x8F6E;&#x65B0;&#x7684;&#x5339;&#x914D;&#x5F00;&#x59CB;&#x524D;&#xFF0C;&#x6211;&#x4EEC;&#x90FD;&#x8981;&#x5BF9;&#x76EE;&#x6807;&#x4E32;&#x4EE5;&#x53CA;&#x7279;&#x5F81;&#x4E32;&#x7684;&#x6307;&#x9488;&#x505A;&#x8D8A;&#x754C;&#x68C0;&#x6D4B;&#xFF08;&#x5373;&#x68C0;&#x6D4B;$s \leq m, \ r \leq n$&#x662F;&#x5426;&#x6EE1;&#x8DB3;&#xFF09;&#xFF0C;&#x4EE5;&#x4FBF;&#x5224;&#x65AD;&#x662F;&#x5426;&#x5DF2;&#x7ECF;&#x627E;&#x5230;&#x4E86;&#x6EE1;&#x8DB3;&#x8981;&#x6C42;&#x7684;&#x7279;&#x5F81;&#x4E32;&#xFF08;&#x5168;&#x5339;&#x914D;&#xFF09;&#xFF0C;&#x4ECE;&#x800C;&#x6D6A;&#x8D39;&#x4E86;&#x5927;&#x91CF;&#x4E0D;&#x5FC5;&#x8981;&#x7684;&#x65F6;&#x95F4;&#x3002;</p>
+<p>&#x2003;&#x2003;&#x5904;&#x7406;&#x529E;&#x6CD5;&#x662F;&#x7279;&#x5F81;&#x4E32;&#x7684;&#x6700;&#x540E;&#x589E;&#x52A0;&#x4E00;&#x4E2A;&#x6C38;&#x8FDC;&#x4E0D;&#x4F1A;&#x88AB;&#x5339;&#x914D;&#x7684;&#x5B57;&#x7B26;&#xFF0C;&#x6BD4;&#x5982;&#x201C;@&#x201D;&#xFF0C;&#x4EE5;&#x6B64;&#x5224;&#x65AD;&#x6307;&#x9488;&#x5DF2;&#x7ECF;&#x5230;&#x8FBE;&#x4E86;&#x5B57;&#x7B26;&#x4E32;&#x7684;&#x5C3E;&#x90E8;&#x8FB9;&#x754C;&#x5904;&#xFF0C;&#x540C;&#x65F6;&#x7F6E;&#x8BE5;&#x5B57;&#x7B26;&#x7684;next&#x503C;&#x4E3A;-1&#xFF0C;&#x5373;$next[m + 1] = -1$&#x3002;&#x4E8E;&#x662F;&#x5C31;&#x53EF;&#x4EE5;&#x628A;&#x5BF9;$s &gt; 0$&#x7684;&#x5224;&#x65AD;&#x653E;&#x5728;&#x6267;&#x884C;&#x4E0D;&#x90A3;&#x4E48;&#x9891;&#x7E41;&#x7684;&#x4EE3;&#x7801;&#x6BB5;&#x4E2D;&#x3002;</p>
+<p>&#x2003;&#x2003;&#x5F53;&#x7136;&#xFF0C;&#x6211;&#x4EEC;&#x8FD8;&#x53EF;&#x4EE5;&#x5BF9;&#x76EE;&#x6807;&#x4E32;&#x6211;&#x4EEC;&#x4E5F;&#x91C7;&#x7528;&#x7C7B;&#x4F3C;&#x7684;&#x65B9;&#x6CD5;&#xFF0C;&#x6BD4;&#x5982;&#x5728;&#x5176;&#x5C3E;&#x90E8;&#x6DFB;&#x52A0;&#x4E00;&#x4E2A;&#x5B57;&#x7B26;&#x201C;$\perp$&#x201D;&#x4F5C;&#x4E3A;&#x8FB9;&#x754C;&#x6807;&#x5FD7;&#xFF0C;&#x540C;&#x65F6;&#x6DFB;&#x52A0;&#x7279;&#x5F81;&#x4E32;&#x9996;&#x5B57;&#x7B26;$pattern[1]$&#x4ECE;&#x800C;&#x907F;&#x514D;&#x9891;&#x7E41;&#x7684;&#x53BB;&#x505A;&#x8D8A;&#x754C;&#x68C0;&#x6D4B;&#xFF0C;&#x5373;$text[n + 1] = \perp, \ text[n+2] = pattern[1]$&#x3002;</p>
+<h5 id="2-5-1-3-&#x9884;&#x7F16;&#x8BD1;&#x673A;&#x5668;&#x7801;"><a href="#2-5-1-3-&#x9884;&#x7F16;&#x8BD1;&#x673A;&#x5668;&#x7801;" class="headerlink" title="2.5.1.3 &#x9884;&#x7F16;&#x8BD1;&#x673A;&#x5668;&#x7801;"></a>2.5.1.3 &#x9884;&#x7F16;&#x8BD1;&#x673A;&#x5668;&#x7801;</h5><p>&#x2003;&#x2003;&#x4E0A;&#x9762;&#x7ED9;&#x51FA;&#x7684;&#x4F8B;&#x5B50;&#x662F;&#x4E00;&#x79CD;&#x901A;&#x7528;&#x7684;&#x89E3;&#x51B3;&#x65B9;&#x6848;&#xFF0C;&#x4F46;&#x662F;&#x5728;&#x67D0;&#x4E9B;&#x5E94;&#x7528;&#x573A;&#x666F;&#x4E0B;&#xFF0C;&#x6548;&#x7387;&#x8FD8;&#x4E0D;&#x662F;&#x6700;&#x9AD8;&#x7684;&#x3002;&#x6BD4;&#x5982;&#x5728;&#x6587;&#x672C;&#x7F16;&#x8F91;&#x5668;&#x4E2D;&#x4F7F;&#x7528;&#x67E5;&#x627E;&#x529F;&#x80FD;&#x65F6;&#xFF0C;&#x6211;&#x4EEC;&#x8F93;&#x5165;&#x7684;&#x7279;&#x5F81;&#x4E32;&#x90FD;&#x662F;&#x6BD4;&#x8F83;&#x77ED;&#x7684;&#xFF0C;&#x56E0;&#x6B64;&#x6211;&#x4EEC;&#x9884;&#x5148;&#x628A;&#x7279;&#x5F81;&#x4E32;&#xFF08;&#x9690;&#x5F0F;&#x7684;&#x5305;&#x542B;&#x4E86;Next&#x6570;&#x7EC4;&#xFF09;&#x7F16;&#x8BD1;&#x6210;&#x673A;&#x5668;&#x7801;&#xFF0C;&#x5C31;&#x53EF;&#x4EE5;&#x5927;&#x5927;&#x7684;&#x63D0;&#x9AD8;&#x6548;&#x7387;&#x3002;</p>
+<p>&#x2003;&#x2003;&#x6BD4;&#x5982;&#x53EF;&#x4EE5;&#x7F16;&#x8BD1;&#x6210;&#x5982;&#x4E0B;&#x7684;&#x673A;&#x5668;&#x7801;&#xFF1A;</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">L0:    k:= k + 1</span><br><span class="line">L1:    if text[k] $neq$ b then go to L0:</span><br><span class="line">           k:= k + 1</span><br><span class="line">       if k &gt; 0 then go to L3:</span><br><span class="line">            &#xB7;&#xB7;&#xB7; &#xB7;&#xB7;&#xB7;</span><br><span class="line">L3:    &#xB7;&#xB7;&#xB7; &#xB7;&#xB7;&#xB7;</span><br></pre></td></tr></table></figure>
+<h4 id="2-5-2-&#x6269;&#x5C55;"><a href="#2-5-2-&#x6269;&#x5C55;" class="headerlink" title="2.5.2 &#x6269;&#x5C55;"></a>2.5.2 &#x6269;&#x5C55;</h4><p>&#x2003;&#x2003;KMP&#x7B97;&#x6CD5;&#x6CA1;&#x6709;&#x6269;&#x5C55;&#x524D;&#x53EA;&#x80FD;&#x5339;&#x914D;&#x76EE;&#x6807;&#x4E32;&#x6700;&#x5DE6;&#x8FB9;&#x7684;&#x7B2C;&#x4E00;&#x4E2A;&#x7279;&#x5F81;&#x4E32;&#xFF0C;&#x5E76;&#x4E14;&#x53EA;&#x662F;&#x5355;&#x6A21;&#x5339;&#x914D;&#x3002;&#x8981;&#x5B9E;&#x73B0;&#x66F4;&#x5F3A;&#x5927;&#x7684;&#x529F;&#x80FD;&#x5C31;&#x9700;&#x8981;&#x505A;&#x4E00;&#x4E9B;&#x6539;&#x8FDB;&#x3002;</p>
+<h5 id="2-5-2-1-&#x5168;&#x90E8;&#x68C0;&#x7D22;"><a href="#2-5-2-1-&#x5168;&#x90E8;&#x68C0;&#x7D22;" class="headerlink" title="2.5.2.1 &#x5168;&#x90E8;&#x68C0;&#x7D22;"></a>2.5.2.1 &#x5168;&#x90E8;&#x68C0;&#x7D22;</h5><p>&#x2003;&#x2003;&#x8981;&#x60F3;&#x628A;&#x6240;&#x6709;&#x7279;&#x5F81;&#x4E32;&#x90FD;&#x68C0;&#x7D22;&#x51FA;&#x6765;&#xFF0C;&#x4F5C;&#x8005;&#x63D0;&#x5230;&#x4E86;&#x4E00;&#x79CD;&#x65B9;&#x6CD5;&#xFF0C;&#x90A3;&#x5C31;&#x662F;&#x65B0;&#x589E;&#x4E00;&#x4E2A;resume&#x53D8;&#x91CF;&#x540C;&#x65F6;&#x7ED3;&#x5408;&#x4E0A;&#x9762;&#x63D0;&#x5230;&#x7684;&#x5728;&#x7279;&#x5F81;&#x4E32;&#x5C3E;&#x90E8;&#x6DFB;&#x52A0;&#x8D8A;&#x754C;&#x6807;&#x8BC6;&#x5B57;&#x7B26;&#x7684;&#x65B9;&#x6CD5;&#x3002;&#x6DFB;&#x52A0;&#x8D8A;&#x754C;&#x5B57;&#x7B26;&#x540E;&#xFF0C;&#x8BA1;&#x7B97;&#x8FD9;&#x4E2A;&#x8D8A;&#x754C;&#x5B57;&#x7B26;&#x7684;Next&#x503C;$next[m + 1]$&#xFF0C;&#x7136;&#x540E;&#x5C06;&#x8FD9;&#x4E2A;&#x503C;&#x8D4B;&#x7ED9;resume&#xFF0C;&#x6700;&#x540E;&#x518D;&#x5C06;$next[m + 1]$&#x7F6E;&#x4E3A;-1&#x3002;&#x5F53;&#x6211;&#x4EEC;&#x68C0;&#x6D4B;&#x5230;&#x4E00;&#x6B21;&#x5B8C;&#x5168;&#x7684;&#x5339;&#x914D;&#x4E4B;&#x540E;&#xFF0C;&#x4F7F;&#x7528;resume&#x7684;&#x503C;&#x66F4;&#x65B0;&#x7279;&#x5F81;&#x4E32;&#x6307;&#x9488;$s$&#x7684;&#x503C;&#xFF0C;&#x4ECE;&#x800C;&#x6062;&#x590D;&#x6267;&#x884C;&#x3002;</p>
+<p>&#x2003;&#x2003;&#x4F46;&#x9700;&#x8981;&#x6CE8;&#x610F;&#x7684;&#x662F;resume&#x7684;&#x503C;&#x4E00;&#x5B9A;&#x4E0D;&#x80FD;&#x4E3A;0&#xFF08;&#x8FD9;&#x6837;&#x5339;&#x914D;&#x7B97;&#x6CD5;&#x4E2D;&#x5185;&#x5B58;&#x5FAA;&#x73AF;&#x7684;$s &gt; 0$&#x5C31;&#x65E0;&#x6CD5;&#x6EE1;&#x8DB3;&#xFF09;&#x3002;</p>
+<h5 id="2-5-2-3-&#x591A;&#x6A21;&#x5339;&#x914D;"><a href="#2-5-2-3-&#x591A;&#x6A21;&#x5339;&#x914D;" class="headerlink" title="2.5.2.3 &#x591A;&#x6A21;&#x5339;&#x914D;"></a>2.5.2.3 &#x591A;&#x6A21;&#x5339;&#x914D;</h5><p>&#x2003;&#x2003;KMP&#x8981;&#x5B9E;&#x73B0;&#x591A;&#x6A21;&#x5339;&#x914D;&#xFF0C;&#x9700;&#x8981;&#x505A;&#x5927;&#x91CF;&#x7684;&#x5DE5;&#x4F5C;&#xFF0C;&#x90FD;&#x53EF;&#x4EE5;&#x518D;&#x5355;&#x72EC;&#x5199;&#x4E00;&#x7BC7;&#x5206;&#x6790;&#x7684;&#x6587;&#x7AE0;&#x4E86;&#xFF0C;&#x611F;&#x5174;&#x8DA3;&#x53EF;&#x81EA;&#x884C;&#x53C2;&#x8003;Paper&#xFF0C;&#x5728;&#x6B64;&#x4E0D;&#x8D58;&#x8FF0;&#x3002;</p>
+<h2 id="&#x4E09;&#x3001;&#x7ED3;&#x8BED;"><a href="#&#x4E09;&#x3001;&#x7ED3;&#x8BED;" class="headerlink" title="&#x4E09;&#x3001;&#x7ED3;&#x8BED;"></a>&#x4E09;&#x3001;&#x7ED3;&#x8BED;</h2><p>&#x2003;&#x2003;&#x80FD;&#x591F;&#x575A;&#x6301;&#x770B;&#x5230;&#x8FD9;&#x91CC;&#xFF0C;&#x6211;&#x76F8;&#x4FE1;&#x4F60;&#x4E00;&#x5B9A;&#x4F1A;&#x6709;&#x6240;&#x6536;&#x83B7;&#x3002;&#x5176;&#x5B9E;KMP&#x7B97;&#x6CD5;&#x662F;&#x4F17;&#x591A;&#x5339;&#x914D;&#x7B97;&#x6CD5;&#x4E2D;&#x6700;&#x96BE;&#x7406;&#x89E3;&#x7684;&#x4E4B;&#x4E00;&#xFF0C;&#x6211;&#x6CA1;&#x5728;&#x5F00;&#x7BC7;&#x7684;&#x65F6;&#x5019;&#x63D0;&#x51FA;&#x6765;&#xFF0C;&#x5C31;&#x662F;&#x4E0D;&#x5E0C;&#x671B;&#x7ED9;&#x8BFB;&#x8005;&#x5E26;&#x6765;&#x592A;&#x5927;&#x538B;&#x529B;&#x3002;&#x8981;&#x641E;&#x61C2;KMP&#x7684;&#x7CBE;&#x9AD3;&#xFF0C;&#x771F;&#x7684;&#x662F;&#x9700;&#x8981;&#x82B1;&#x5927;&#x91CF;&#x65F6;&#x95F4;&#x53CD;&#x590D;&#x7684;&#x53BB;&#x63E3;&#x6469;&#x3001;&#x63A8;&#x5BFC;&#x3002;&#x672C;&#x6587;&#x4E3A;&#x4E86;&#x517C;&#x987E;&#x4E00;&#x4E9B;&#x6CA1;&#x6709;&#x76F8;&#x5173;&#x80CC;&#x666F;&#x7684;&#x540C;&#x4E8B;&#xFF0C;&#x6240;&#x4EE5;&#x6709;&#x70B9;&#x504F;&#x957F;&#xFF0C;&#x758F;&#x6F0F;&#x4E5F;&#x5728;&#x6240;&#x96BE;&#x514D;&#xFF0C;&#x5E0C;&#x671B;&#x53CA;&#x65F6;&#x6307;&#x6B63;&#x3002;</p>
+<p>&#x2003;&#x2003;&#x5982;&#x679C;&#x4F60;&#x6CA1;&#x770B;&#x61C2;&#xFF0C;&#x4E0D;&#x8981;&#x6000;&#x7591;&#x81EA;&#x5DF1;&#xFF0C;&#x4E00;&#x5B9A;&#x662F;&#x6211;&#x6CA1;&#x6709;&#x8BB2;&#x6E05;&#x695A;&#xFF0C;&#x8BF7;&#x52A1;&#x5FC5;&#x5728;&#x8BC4;&#x8BBA;&#x4E2D;&#x6307;&#x51FA;&#xFF08;&#x76EE;&#x524D;&#x67E5;&#x770B;&#x3001;&#x56DE;&#x590D;&#x8BC4;&#x8BBA;&#x5747;&#x9700;&#x8981;&#x4EE3;&#x7406;&#xFF09;&#x3002;</p>
+<p>&#x2003;&#x2003;&#x6211;&#x4EEC;&#x4E00;&#x76F4;&#x575A;&#x4FE1;&#xFF0C;&#x6388;&#x4EBA;&#x4EE5;&#x9C7C;&#x8FDC;&#x4E0D;&#x5982;&#x6388;&#x4EBA;&#x6E14;&#x3002;</p>
+<p>&#x2003;&#x2003;&#x53C2;&#x8003;&#x8D44;&#x6599;&#x5982;&#x4E0B;&#xFF1A;</p>
+<ol>
+<li><a href="https://blog.csdn.net/v_july_v/article/details/7041827" target="_blank" rel="noopener">&#x4ECE;&#x5934;&#x5230;&#x5C3E;&#x5F7B;&#x5E95;&#x7406;&#x89E3;KMP&#xFF08;2014&#x5E74;8&#x6708;22&#x65E5;&#x7248;&#xFF09;</a>;</li>
+<li><a href="http://www.ruanyifeng.com/blog/2013/05/Knuth%E2%80%93Morris%E2%80%93Pratt_algorithm.html" target="_blank" rel="noopener">&#x5B57;&#x7B26;&#x4E32;&#x5339;&#x914D;&#x7684;KMP&#x7B97;&#x6CD5;</a>;</li>
+<li><a href="https://youjiexia.github.io/2017/05/03/KMP-Algorithm/" target="_blank" rel="noopener">KMP &#x7B97;&#x6CD5; &#x2014;&#x2014; &#x5B57;&#x7B26;&#x4E32;&#x5339;&#x914D;&#x7B97;&#x6CD5;</a>;</li>
+<li><a href="https://book.douban.com/subject/2038862/" target="_blank" rel="noopener">&#x67D4;&#x6027;&#x5B57;&#x7B26;&#x4E32;&#x5339;&#x914D;</a>;</li>
+<li><a href="https://book.douban.com/subject/20432061/" target="_blank" rel="noopener">&#x7B97;&#x6CD5;&#x5BFC;&#x8BBA;</a>;</li>
+</ol>
+</div><!-- 正文结束标志         --><!--标记内容的显示格式，定义在style.style中--><div class="end-of-content"><!--要显示的内容--><div class="end-of-content"><div><i>————    本文结束    ————</i><p></p></div></div></div><!-- 文末文章标签--><div class="tags"><a href="/tags/算法/">算法</a><a href="/tags/字符串匹配/">字符串匹配</a></div><!-- 分享文章--><div class="post-share"><div class="bdsharebuttonbox"><span style="float:left;line-height: 28px;height: 28px;font-size:16px;font-weight:blod">分享到：</span><a href="#" data-cmd="more" class="bds_more"></a><a href="#" data-cmd="mshare" title="分享到一键分享" class="bds_mshare"></a><a href="#" data-cmd="fbook" title="分享到Facebook" class="bds_fbook"></a><a href="#" data-cmd="twi" title="分享到Twitter" class="bds_twi"></a><a href="#" data-cmd="linkedin" title="分享到linkedin" class="bds_linkedin"></a><a href="#" data-cmd="youdao" title="分享到有道云笔记" class="bds_youdao"></a><a href="#" data-cmd="evernotecn" title="分享到印象笔记" class="bds_evernotecn"></a><a href="#" data-cmd="weixin" title="分享到微信" class="bds_weixin"></a><a href="#" data-cmd="qzone" title="分享到QQ空间" class="bds_qzone"></a><a href="#" data-cmd="tsina" title="分享到新浪微博" class="bds_tsina"></a></div></div><!-- 站内导航--><div class="post-nav"><a href="/2018/06/15/手算CNN中的参数/" class="pre">CNN中的参数解释及计算</a><a href="/2018/04/21/机器学习算法系列之三：SVM6/" class="next">机器学习算法系列之三：SVM6</a></div><!--新增打赏功能在正文底部--><div class="page-reward"><a id="a_label" class="page-reward-btn tooltip-top"><div id="reward_guide" class="tooltip tooltip-east"><span id="btn_guide" href="javascript:;" class="tooltip-item">打赏</span></div><script type="text/javascript">document.getElementById("btn_guide").onclick = function(){
+    document.getElementById("reward_guide").setAttribute("style", "display:none");
+    document.getElementById("a_label").setAttribute("style", "display:none");
+    document.getElementById("img_guide").setAttribute("style", "display:block");
+}</script></a><div id="img_guide" style="display:none" class="tooltip reward-box"><table><tr><td><img src="https://flat2010.github.io/about/weixin_qrcode.jpg" style="text-align:center;float:center" class="reward-img"></td><td></td></tr></table></div><script type="text/javascript">document.getElementById("img_guide").onclick = function(){
+    document.getElementById("reward_guide").setAttribute("style", "display:inline-block");
+    document.getElementById("a_label").setAttribute("style", "display:inline-block");
+    document.getElementById("img_guide").setAttribute("style", "display:none");
+}</script></div><!--end--><div id="comments"><div id="disqus_thread"></div></div></div></div></div><div class="layout-r"><div id="sidebar"><div class="search-pla"></div><div id="toc" class="widget"><div class="widget-title"><i class="fa fa-fei">文章目录</i></div><ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#一、引言"><span class="toc-text">一、引言</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#1-1-反馈之殇"><span class="toc-text">1.1 反馈之殇</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#1-2-系列文章"><span class="toc-text">1.2 系列文章</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#1-3-前注"><span class="toc-text">1.3 前注</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#二、字符串匹配算法"><span class="toc-text">二、字符串匹配算法</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#2-1-简介"><span class="toc-text">2.1 简介</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2-2-术语-amp-amp-约定"><span class="toc-text">2.2 术语&amp;&amp;约定</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#2-2-1-目标串"><span class="toc-text">2.2.1 目标串</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#2-2-2-特征串"><span class="toc-text">2.2.2 特征串</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2-3-Naive-Algorithm-Brute-Force-算法"><span class="toc-text">2.3 Naive Algorithm(Brute Force)算法</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2-4-KMP-Knuth–Morris–Pratt-算法"><span class="toc-text">2.4 KMP(Knuth–Morris–Pratt)算法</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#2-4-3-Next数组之谜"><span class="toc-text">2.4.3 Next数组之谜</span></a><ol class="toc-child"><li class="toc-item toc-level-5"><a class="toc-link" href="#2-4-3-1-定位之谜一"><span class="toc-text">2.4.3.1 定位之谜一</span></a></li><li class="toc-item toc-level-5"><a class="toc-link" href="#2-4-3-3-定位之谜二"><span class="toc-text">2.4.3.3 定位之谜二</span></a></li><li class="toc-item toc-level-5"><a class="toc-link" href="#2-4-3-4-Next数组大小"><span class="toc-text">2.4.3.4 Next数组大小</span></a></li><li class="toc-item toc-level-5"><a class="toc-link" href="#2-4-3-5-F数组计算"><span class="toc-text">2.4.3.5 F数组计算</span></a></li><li class="toc-item toc-level-5"><a class="toc-link" href="#2-4-3-6-Next数组计算"><span class="toc-text">2.4.3.6 Next数组计算</span></a></li><li class="toc-item toc-level-5"><a class="toc-link" href="#2-4-3-7-NFA和DFA的类比说明"><span class="toc-text">2.4.3.7 NFA和DFA的类比说明</span></a></li></ol></li><li class="toc-item toc-level-4"><a class="toc-link" href="#2-4-4-完整KMP代码"><span class="toc-text">2.4.4 完整KMP代码</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2-5-KMP优化和扩展"><span class="toc-text">2.5 KMP优化和扩展</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#2-5-1-性能优化"><span class="toc-text">2.5.1 性能优化</span></a><ol class="toc-child"><li class="toc-item toc-level-5"><a class="toc-link" href="#2-5-1-1-Large-alphabet-of-characters"><span class="toc-text">2.5.1.1 Large alphabet of characters</span></a></li><li class="toc-item toc-level-5"><a class="toc-link" href="#2-5-1-2-全匹配检测"><span class="toc-text">2.5.1.2 全匹配检测</span></a></li><li class="toc-item toc-level-5"><a class="toc-link" href="#2-5-1-3-预编译机器码"><span class="toc-text">2.5.1.3 预编译机器码</span></a></li></ol></li><li class="toc-item toc-level-4"><a class="toc-link" href="#2-5-2-扩展"><span class="toc-text">2.5.2 扩展</span></a><ol class="toc-child"><li class="toc-item toc-level-5"><a class="toc-link" href="#2-5-2-1-全部检索"><span class="toc-text">2.5.2.1 全部检索</span></a></li><li class="toc-item toc-level-5"><a class="toc-link" href="#2-5-2-3-多模匹配"><span class="toc-text">2.5.2.3 多模匹配</span></a></li></ol></li></ol></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#三、结语"><span class="toc-text">三、结语</span></a></li></ol></div><div class="widget"><div class="widget-title"><i class="fa fa-xie"> 最新文章</i></div><ul class="post-list"><li class="post-list-item"><a class="post-list-link" href="/2019/05/07/Hexo博客相关命令/">Hexo博客相关命令</a></li><li class="post-list-item"><a class="post-list-link" href="/2018/10/26/共轭梯度法通俗讲义/">共轭梯度法通俗讲义</a></li><li class="post-list-item"><a class="post-list-link" href="/2018/10/26/共轭的那些事儿/">共轭的那些事儿</a></li><li class="post-list-item"><a class="post-list-link" href="/2018/06/30/病态问题及条件数/">病态问题及条件数</a></li><li class="post-list-item"><a class="post-list-link" href="/2018/06/15/手算CNN中的参数/">CNN中的参数解释及计算</a></li><li class="post-list-item"><a class="post-list-link" href="/2018/04/23/字符串匹配算法系列之一：BF-KMP/">字符串匹配算法系列之一：BF && KMP</a></li><li class="post-list-item"><a class="post-list-link" href="/2018/04/21/机器学习算法系列之三：SVM6/">机器学习算法系列之三：SVM6</a></li><li class="post-list-item"><a class="post-list-link" href="/2018/04/19/模运算中为何要用素数作为模/"> 模运算中为何要用素数作为模</a></li><li class="post-list-item"><a class="post-list-link" href="/2018/03/31/机器学习算法系列之三：SVM5/">机器学习算法系列之三：SVM（5）</a></li><li class="post-list-item"><a class="post-list-link" href="/2018/02/16/深度学习：目标检测之一（基础篇）/">深度学习：目标检测之一（基础篇）</a></li></ul></div><div class="widget"><div class="widget-title"><i class="fa fa-gui"> 分类</i><ul></ul><ul></ul><ul></ul><ul></ul><ul></ul><ul></ul><ul></ul><ul></ul><ul></ul><ul></ul><ul></ul><ul></ul><ul></ul><ul></ul><ul></ul></div><ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="/categories/Docker/">Docker</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Hexo博客/">Hexo博客</a><span class="category-list-count">2</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Linux/">Linux</a><span class="category-list-count">2</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Python/">Python</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/字符串匹配/">字符串匹配</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/安装配置教程/">安装配置教程</a><span class="category-list-count">2</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/数学理论/">数学理论</a><span class="category-list-count">6</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/日常技巧总结/">日常技巧总结</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/机器学习/">机器学习</a><span class="category-list-count">9</span><ul class="category-list-child"><li class="category-list-item"><a class="category-list-link" href="/categories/机器学习/支持向量机/">支持向量机</a><span class="category-list-count">1</span></li></ul></li><li class="category-list-item"><a class="category-list-link" href="/categories/深度学习/">深度学习</a><span class="category-list-count">2</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/编程笔记/">编程笔记</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/网络协议/">网络协议</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/读书笔记/">读书笔记</a><span class="category-list-count">5</span></li></ul></div><div class="widget"><div class="widget-title"><i class="fa fa-biao"> 标签</i></div><div class="tagcloud"><a href="/tags/统计学习/" style="font-size: 12px; color: #00f">统计学习</a> <a href="/tags/机器学习/" style="font-size: 22.4px; color: #c0f">机器学习</a> <a href="/tags/Python/" style="font-size: 17.2px; color: #60f">Python</a> <a href="/tags/物联网/" style="font-size: 12px; color: #00f">物联网</a> <a href="/tags/Hexo/" style="font-size: 14.6px; color: #30f">Hexo</a> <a href="/tags/个人博客/" style="font-size: 14.6px; color: #30f">个人博客</a> <a href="/tags/Docker/" style="font-size: 12px; color: #00f">Docker</a> <a href="/tags/Hadoop/" style="font-size: 12px; color: #00f">Hadoop</a> <a href="/tags/Spark/" style="font-size: 12px; color: #00f">Spark</a> <a href="/tags/分布式/" style="font-size: 12px; color: #00f">分布式</a> <a href="/tags/Netfilter/" style="font-size: 12px; color: #00f">Netfilter</a> <a href="/tags/Iptables/" style="font-size: 12px; color: #00f">Iptables</a> <a href="/tags/Linux/" style="font-size: 14.6px; color: #30f">Linux</a> <a href="/tags/3D图形/" style="font-size: 12px; color: #00f">3D图形</a> <a href="/tags/Numpy/" style="font-size: 12px; color: #00f">Numpy</a> <a href="/tags/Ubuntu/" style="font-size: 14.6px; color: #30f">Ubuntu</a> <a href="/tags/算法/" style="font-size: 25px; color: #f0f">算法</a> <a href="/tags/Wireshark/" style="font-size: 12px; color: #00f">Wireshark</a> <a href="/tags/HTTP/" style="font-size: 12px; color: #00f">HTTP</a> <a href="/tags/Pcapy/" style="font-size: 12px; color: #00f">Pcapy</a> <a href="/tags/共轭/" style="font-size: 14.6px; color: #30f">共轭</a> <a href="/tags/深度学习/" style="font-size: 12px; color: #00f">深度学习</a> <a href="/tags/李航/" style="font-size: 12px; color: #00f">李航</a> <a href="/tags/Oracle/" style="font-size: 12px; color: #00f">Oracle</a> <a href="/tags/数据库/" style="font-size: 12px; color: #00f">数据库</a> <a href="/tags/字符串匹配/" style="font-size: 12px; color: #00f">字符串匹配</a> <a href="/tags/卷积/" style="font-size: 12px; color: #00f">卷积</a> <a href="/tags/池化/" style="font-size: 12px; color: #00f">池化</a> <a href="/tags/数据挖掘/" style="font-size: 12px; color: #00f">数据挖掘</a> <a href="/tags/DataMine/" style="font-size: 12px; color: #00f">DataMine</a> <a href="/tags/JiaWei-Han/" style="font-size: 12px; color: #00f">JiaWei Han</a> <a href="/tags/拉格朗日/" style="font-size: 12px; color: #00f">拉格朗日</a> <a href="/tags/对偶问题/" style="font-size: 12px; color: #00f">对偶问题</a> <a href="/tags/SVM/" style="font-size: 19.8px; color: #90f">SVM</a> <a href="/tags/支持向量机/" style="font-size: 19.8px; color: #90f">支持向量机</a> <a href="/tags/Hash/" style="font-size: 12px; color: #00f">Hash</a> <a href="/tags/模运算/" style="font-size: 12px; color: #00f">模运算</a> <a href="/tags/回调函数/" style="font-size: 12px; color: #00f">回调函数</a> <a href="/tags/目标检测/" style="font-size: 12px; color: #00f">目标检测</a> <a href="/tags/数学概念/" style="font-size: 12px; color: #00f">数学概念</a> <a href="/tags/数学定义/" style="font-size: 12px; color: #00f">数学定义</a> <a href="/tags/病态/" style="font-size: 12px; color: #00f">病态</a> <a href="/tags/条件数/" style="font-size: 12px; color: #00f">条件数</a> <a href="/tags/特征值/" style="font-size: 12px; color: #00f">特征值</a> <a href="/tags/特征向量/" style="font-size: 12px; color: #00f">特征向量</a></div></div><div class="widget"><div class="widget-title"><i class="fa fa-archive"> 时间线</i></div><ul class="archive-list"><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/05/">2019年05月</a><span class="archive-list-count">1</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/10/">2018年10月</a><span class="archive-list-count">2</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/06/">2018年06月</a><span class="archive-list-count">2</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/04/">2018年04月</a><span class="archive-list-count">3</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/03/">2018年03月</a><span class="archive-list-count">1</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/02/">2018年02月</a><span class="archive-list-count">1</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2017/12/">2017年12月</a><span class="archive-list-count">1</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2017/08/">2017年08月</a><span class="archive-list-count">1</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2017/07/">2017年07月</a><span class="archive-list-count">2</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2017/05/">2017年05月</a><span class="archive-list-count">3</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2017/04/">2017年04月</a><span class="archive-list-count">2</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2017/02/">2017年02月</a><span class="archive-list-count">1</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2017/01/">2017年01月</a><span class="archive-list-count">4</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2016/12/">2016年12月</a><span class="archive-list-count">3</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2016/11/">2016年11月</a><span class="archive-list-count">4</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2016/10/">2016年10月</a><span class="archive-list-count">1</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2016/08/">2016年08月</a><span class="archive-list-count">1</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2014/06/">2014年06月</a><span class="archive-list-count">1</span></li></ul></div><div class="widget"><div class="widget-title"><i class="fa fa-github"> Github</i></div><ul></ul><a href="https://github.com/flat2010" title="flat2010" target="_blank">flat2010</a><iframe width="100%" height="100" frameborder="0" scrolling="no" src="" class="share_self"></iframe></div></div></div></div><a id="totop" href="#top"></a><div id="footer"><div class="footer-info"><p><a href="/baidusitemap.xml">baidusitemap</a> |  <a href="/atom.xml">订阅</a> |  <a href="/about/">关于</a></p><!-- 首页底部显示网站总字数--><p>本站博客总字数：<i>171.0k 字</i></p><p>本站访客总数：<i id="busuanzi_container_site_uv"><i id="busuanzi_value_site_uv"></i></i>次</p><p>文章总阅读次数：<i id="busuanzi_container_site_pv"><i id="busuanzi_value_site_pv"></i></i>次</p><p><span> Copyright &copy;<a href="/." rel="nofollow">Jineney.</a></span><span> Theme by<a rel="nofollow" target="_blank" href="https://github.com/flat2010/Molin"> Molin.</a></span><span> Count by<a href="https://busuanzi.ibruce.info/"> busuanzi.</a></span><span> Powered by<a rel="nofollow" target="_blank" href="https://hexo.io"> Hexo.</a></span></p></div></div></div><script src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js" async></script><script type="text/javascript" src="/js/search.json.js?v=2.0.1"></script><!-- tocfold.js中需要用到jquery--><script type="text/javascript" src="http://code.jquery.com/jquery-1.7.1.min.js" async></script><!-- 控制文章目录折叠特性的脚本--><script type="text/javascript" src="/js/tocfold.js?v=2.0.1" async> </script><!-- 返回文章顶部的脚本 --><script type="text/javascript" src="/js/toctotop.js?v=2.0.1" async></script><script>window._bd_share_config={"common":{"bdSnsKey":{},"bdText":"","bdMini":"2","bdMiniList":["mshare","weixin","tsina","qzone","linkedin","fbook","twi","print","renren","sqq","evernotecn","bdysc","tqq","tqf","bdxc","kaixin001","tieba","douban","bdhome","thx","ibaidu","meilishuo","mogujie","diandian","huaban","duitang","hx","fx","youdao","sdo","qingbiji","people","xinhua","mail","isohu","yaolan","wealink","ty","iguba","h163","copy"],"bdPic":"","bdStyle":"1","bdSize":"16"},"share":{},"image":{"viewList":["tsina","qzone","weixin","fbook","twi","linkedin","youdao","evernotecn","mshare"],"viewText":"分享到：","viewSize":"16"},"selectShare":{"bdContainerClass":null,"bdSelectMiniList":["tsina","qzone","weixin","fbook","twi","linkedin","youdao","evernotecn","mshare"]}};with(document)0[(getElementsByTagName('head')[0]||head).appendChild(createElement('script')).src='http://bdimg.share.baidu.com/static/api/js/share.js?v=89860593.js?cdnversion='+~(-new Date()/36e5)];
+</script><script>var disqus_shortname = 'flat2010';
+var disqus_identifier = '2018/04/23/字符串匹配算法系列之一：BF-KMP/';
+var disqus_title = '字符串匹配算法系列之一：BF &amp;&amp; KMP';
+var disqus_url = 'https://flat2010.github.io/2018/04/23/字符串匹配算法系列之一：BF-KMP/';
+(function() {
+  var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+  dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+  (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+})();</script><script id="dsq-count-scr" src="//flat2010.disqus.com/count.js" async></script><!-- 开启下面这条，所有评论会出现在底部，非常难看--><!--script(type='text/javascript', src='//#{theme.comment.disqus}.disqus.com/recent_comments_widget.js?num_items=5&hide_avatars=1&avatar_size=32&excerpt_length=20&hide_mods=1')--></body></html><!--为主题添加mathjax支持--><script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-MML-AM_CHTML" async></script><script type="text/x-mathjax-config">MathJax.Hub.Config({"HTML-CSS": { preferredFont: "TeX", availableFonts: ["STIX","TeX"], linebreaks: { automatic:true }, EqnChunk: (MathJax.Hub.Browser.isMobile ? 10 : 50) },
+tex2jax: { inlineMath: [ ["$", "$"], ["\\\(","\\)"] ], processEscapes: true, ignoreClass: "tex2jax_ignore|dno",skipTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code']},
+TeX: { noUndefined: { attributes: { mathcolor: "red", mathbackground: "#FFEEEE", mathsize: "90%" } }, Macros: { href: "{}" } },
+messageStyle: "none"
+});</script>
